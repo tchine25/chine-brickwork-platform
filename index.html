@@ -514,24 +514,6 @@
   </div>
 </div>
 
-<!-- OPP DETAIL MODAL -->
-<div class="overlay" id="opp-overlay" onclick="if(event.target===this)closeOpp()">
-  <div class="modal" style="max-width:560px">
-    <div class="modal-hdr">
-      <div><div id="opp-title" style="font-size:16px;font-weight:600"></div><div id="opp-sub" style="font-size:13px;color:var(--text-secondary);margin-top:3px"></div></div>
-      <button class="mclose" onclick="closeOpp()">&#x2715;</button>
-    </div>
-    <div class="modal-body">
-      <div class="igrid" id="opp-info"></div>
-      <div class="slbl" style="margin-top:16px">Next action</div>
-      <div style="background:var(--warn-bg);border-radius:var(--radius-md);padding:12px;margin-top:6px" id="opp-action"></div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn" onclick="closeOpp()">Close</button>
-    </div>
-  </div>
-</div>
-
 </div><!-- end .app -->
 </div><!-- end #app -->
 
@@ -951,10 +933,10 @@ function renderFuture(data){
     <div class="fc2">
       <div class="fh2"><span style="font-weight:600">${c.contractor}</span><span class="bdg" style="background:${tBg[c.timing]};color:${tColor[c.timing]}">${c.timing}</span></div>
       <div>${c.projects.map((p,pi)=>`
-        <div class="fp" onclick="openOpp(${ci},${pi})">
+        <div class="fp" data-ci="${ci}" data-pi="${pi}">
           <div class="dot" style="background:#7F77DD;margin-top:5px;flex-shrink:0"></div>
           <div style="flex:1"><div class="fpn">${p.name}</div><div class="fpd">${p.detail||''}</div><div class="fpa">${p.action||''}</div>${p.nextDate?`<div style="font-size:11px;margin-top:3px;color:#633806;font-weight:500">Chase: ${p.nextDate}</div>`:''}</div>
-          <div style="font-size:18px;color:var(--text-secondary);align-self:center;flex-shrink:0">›</div>
+          <div style="font-size:18px;color:var(--text-secondary);align-self:center;flex-shrink:0">&#8250;</div>
         </div>`).join('')}
       </div>
     </div>`).join('');
@@ -975,9 +957,11 @@ function openOpp(ci,pi){
   document.getElementById('opp-action').innerHTML=proj.nextDate||proj.action
     ?`<div style="font-size:12px;font-weight:600;color:#633806;margin-bottom:4px">${proj.nextDate||'No date set'}</div><div style="font-size:13px;color:#412402">${proj.action||'—'}</div>`
     :'<div style="color:var(--text-secondary);font-size:12px">No action set.</div>';
-  document.getElementById('opp-overlay').classList.add('on');
+  const ov=document.getElementById('opp-overlay');
+  ov.style.display='flex';
+  ov.onclick=function(e){if(e.target===ov)closeOpp();};
 }
-function closeOpp(){document.getElementById('opp-overlay').classList.remove('on');}
+function closeOpp(){document.getElementById('opp-overlay').style.display='none';}
 
 function openOppFromOverview(oppId,projId){
   for(let ci=0;ci<futOpps.length;ci++){const o=futOpps[ci];for(let pi=0;pi<o.projects.length;pi++){if(o.projects[pi].id===projId){_futRenderData=futOpps;openOpp(ci,pi);return;}}}
@@ -1100,7 +1084,34 @@ function morningBriefing(){
 
 document.querySelectorAll('.kw').forEach(k=>k.addEventListener('click',function(){this.classList.toggle('on');}));
 
+document.getElementById('fut-grid').addEventListener('click',function(e){
+  const fp=e.target.closest('.fp');
+  if(!fp)return;
+  const ci=parseInt(fp.dataset.ci);
+  const pi=parseInt(fp.dataset.pi);
+  openOpp(ci,pi);
+});
+
 init();
 </script>
+
+<!-- OPP DETAIL MODAL -->
+<div id="opp-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:flex-start;justify-content:center;padding:40px 20px;overflow-y:auto">
+  <div style="background:#fff;border-radius:12px;border:1px solid #e0e0e0;width:100%;max-width:560px;overflow:hidden">
+    <div style="padding:16px 20px;border-bottom:1px solid #e0e0e0;display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+      <div><div id="opp-title" style="font-size:16px;font-weight:600"></div><div id="opp-sub" style="font-size:13px;color:#666;margin-top:3px"></div></div>
+      <button onclick="closeOpp()" style="font-size:20px;cursor:pointer;color:#666;background:none;border:none;line-height:1">&#x2715;</button>
+    </div>
+    <div style="padding:18px 20px">
+      <div class="igrid" id="opp-info"></div>
+      <div class="slbl" style="margin-top:16px">Next action</div>
+      <div style="background:#fef9e7;border-radius:8px;padding:12px;margin-top:6px" id="opp-action"></div>
+    </div>
+    <div style="padding:13px 20px;border-top:1px solid #e0e0e0;display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn" onclick="closeOpp()">Close</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
