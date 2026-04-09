@@ -686,7 +686,7 @@ async function loadData(){
 
   jobs=(jr.data||[]).map(j=>({
     id:j.id,cb:j.cb,con:j.con,proj:j.proj,stage:j.stage,owner:j.owner,
-    nextDate:j.next_date,nextAct:j.next_act,status:j.status,contact:j.contact,
+    nextDate:j.next_date,nextAct:j.next_act,status:calcStatus(j.next_date),contact:j.contact,
     comms:(cr.data||[]).filter(c=>c.job_id===j.id).map(c=>({d:c.d,who:c.who,type:c.type,text:c.text}))
   }));
   leads=(lr.data||[]).map(l=>({id:l.id,title:l.title,src:l.src,val:l.val,loc:l.loc,deadline:l.deadline,hot:l.hot,desc:l.description,url:l.url}));
