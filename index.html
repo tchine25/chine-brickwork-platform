@@ -689,7 +689,7 @@ async function loadData(){
   ]);
 
   jobs=(jr.data||[]).map(j=>({
-    id:j.id,cb:j.cb,con:j.con,proj:j.proj,stage:j.stage,owner:j.owner,
+    id:j.id,cb:j.cb,con:j.con,proj:j.proj,stage:j.stage,owner:j.owner,folder:j.folder||'',
     nextDate:j.next_date,nextAct:j.next_act,status:calcStatus(j.next_date),contact:j.contact,
     comms:(cr.data||[]).filter(c=>c.job_id===j.id).map(c=>({d:c.d,who:c.who,type:c.type,text:c.text}))
   }));
@@ -864,7 +864,8 @@ function renderOverview(){
   const ok=jobs.filter(j=>j.status==='ok').sort((a,b)=>dateSortVal(a.nextDate)-dateSortVal(b.nextDate)).slice(0,10);
   const dc={overdue:'dr',week:'da',ok:'dg'};
   const dtc={overdue:'r',week:'a',ok:'b'};
-  const mkLi=j=>`<li class="ji" onclick="openJob('${j.id}')"><div class="dot ${dc[j.status]}"></div><div style="flex:1"><div class="jname">${j.cb} – ${j.proj} <span style="font-weight:400;color:var(--text-secondary)">· ${j.con}</span></div><div class="jdesc">${j.nextAct}</div></div><div class="jdate ${dtc[j.status]}">${j.nextDate.slice(0,5)}</div></li>`;
+  const folderTag=f=>f?`<span style="font-size:10px;background:#e8f0fe;color:#1a56db;border-radius:3px;padding:1px 5px;margin-left:6px;font-weight:500">${f}</span>`:'';
+  const mkLi=j=>`<li class="ji" onclick="openJob('${j.id}')"><div class="dot ${dc[j.status]}"></div><div style="flex:1"><div class="jname">${j.cb} – ${j.proj} <span style="font-weight:400;color:var(--text-secondary)">· ${j.con}</span>${folderTag(j.folder)}</div><div class="jdesc">${j.nextAct}</div></div><div class="jdate ${dtc[j.status]}">${j.nextDate.slice(0,5)}</div></li>`;
   document.getElementById('ov-overdue').innerHTML=ov.map(mkLi).join('');
   document.getElementById('ov-week').innerHTML=wk.map(mkLi).join('');
   document.getElementById('ov-ok').innerHTML=ok.map(mkLi).join('');
@@ -876,6 +877,7 @@ function renderPipeline(data){
   document.getElementById('pipe-body').innerHTML=data.map(j=>`<tr onclick="openJob('${j.id}')">
     <td style="font-weight:600">${j.cb}</td><td>${j.con}</td><td>${j.proj}</td>
     <td>${pill(SP[j.stage]||'pp',j.stage)}</td>
+    <td style="font-size:11px">${j.folder?`<span style="background:#e8f0fe;color:#1a56db;border-radius:3px;padding:2px 5px">${j.folder}</span>`:''}</td>
     <td style="text-align:center">${obadge(j.owner)}</td>
     <td style="font-size:11px;color:var(--text-secondary)">${j.nextDate}</td>
     <td>${pill(SC[j.status][0],SC[j.status][1])}</td>
