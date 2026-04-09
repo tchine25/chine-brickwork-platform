@@ -941,7 +941,6 @@ function openJob(id){
   document.getElementById('edit-status-display').value=statusLabel(calcStatus(j.nextDate||''));
   document.getElementById('edit-next-date').oninput=function(){document.getElementById('edit-status-display').value=statusLabel(calcStatus(this.value));};
   document.getElementById('edit-next-act').value=j.nextAct||'';
-  document.getElementById('edit-status').value=j.status||'ok';
   document.getElementById('edit-stage').value=j.stage||'Submitted';
   document.getElementById('edit-owner').value=j.owner||'TC';
   document.getElementById('edit-contact').value=j.contact||'';
