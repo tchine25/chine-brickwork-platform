@@ -4,16 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Chine Brickwork — Commercial Platform</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root {
-    --bg-primary: #ffffff;
-    --bg-secondary: #f5f5f5;
-    --bg-tertiary: #efefef;
-    --text-primary: #111111;
-    --text-secondary: #666666;
-    --border: #e0e0e0;
-    --teal: #1ab8a8;
-    --navy: #1a6fa8;
+    --bg-primary: #ffffff; --bg-secondary: #f5f5f5; --bg-tertiary: #efefef;
+    --text-primary: #111111; --text-secondary: #666666; --border: #e0e0e0;
+    --teal: #1ab8a8; --navy: #1a6fa8;
     --danger-bg: #fdecea; --danger-txt: #c0392b;
     --warn-bg: #fef9e7; --warn-txt: #b7770d;
     --info-bg: #e6f1fb; --info-txt: #0c447c;
@@ -22,208 +18,186 @@
     --radius-md: 8px; --radius-lg: 12px;
   }
   @media (prefers-color-scheme: dark) {
-    :root {
-      --bg-primary: #1a1a1a; --bg-secondary: #252525; --bg-tertiary: #2e2e2e;
-      --text-primary: #f0f0f0; --text-secondary: #999999; --border: #3a3a3a;
-    }
+    :root { --bg-primary:#1a1a1a;--bg-secondary:#252525;--bg-tertiary:#2e2e2e;--text-primary:#f0f0f0;--text-secondary:#999999;--border:#3a3a3a; }
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; background: var(--bg-tertiary); color: var(--text-primary); font-size: 13px; }
   .app { max-width: 1400px; margin: 0 auto; }
-
-  /* ── Top bar ── */
-  .topbar { display: flex; align-items: center; justify-content: space-between; padding: 13px 24px; background: var(--bg-primary); border-bottom: 1px solid var(--border); }
-  .logo { display: flex; align-items: center; gap: 10px; }
-  .logo svg { width: 28px; height: 28px; }
-  .lt { font-size: 16px; font-weight: 600; color: var(--navy); }
-  .ls { font-size: 16px; font-weight: 600; color: var(--teal); }
-  .topbar-right { display: flex; align-items: center; gap: 10px; }
-  .date-badge { font-size: 11px; color: var(--text-secondary); background: var(--bg-secondary); padding: 4px 10px; border-radius: var(--radius-md); border: 1px solid var(--border); }
-  .btn { padding: 6px 14px; font-size: 12px; border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--bg-primary); color: var(--text-primary); cursor: pointer; transition: background 0.15s; }
-  .btn:hover { background: var(--bg-secondary); }
-  .btn-primary { background: var(--navy); color: #fff; border-color: var(--navy); }
-  .btn-primary:hover { opacity: 0.9; }
-
-  /* ── Module tabs ── */
-  .module-tabs { display: flex; background: var(--bg-primary); border-bottom: 1px solid var(--border); padding: 0 24px; gap: 0; }
-  .mtab { padding: 11px 20px; font-size: 13px; font-weight: 500; cursor: pointer; color: var(--text-secondary); border-bottom: 2.5px solid transparent; transition: all 0.15s; display: flex; align-items: center; gap: 7px; }
-  .mtab.on { color: var(--navy); border-bottom-color: var(--navy); }
-  .mtab.mkt.on { color: var(--teal); border-bottom-color: var(--teal); }
-  .mtab:hover { color: var(--text-primary); }
-  .count-badge { font-size: 10px; padding: 1px 6px; border-radius: 10px; font-weight: 600; }
-  .cb-red { background: var(--danger-bg); color: var(--danger-txt); }
-  .cb-teal { background: #e1f5ee; color: #085041; }
-
-  /* ── Module / page ── */
-  .module { display: none; }
-  .module.on { display: block; }
-  .subnav { display: flex; gap: 3px; padding: 10px 24px; background: var(--bg-secondary); border-bottom: 1px solid var(--border); }
-  .snt { padding: 5px 13px; font-size: 12px; border-radius: var(--radius-md); cursor: pointer; border: 1px solid transparent; color: var(--text-secondary); background: transparent; transition: all 0.1s; }
-  .snt.on { background: var(--bg-primary); border-color: var(--border); color: var(--text-primary); font-weight: 500; }
-  .snt:hover { color: var(--text-primary); }
-  .pg { display: none; padding: 20px 24px; }
-  .pg.on { display: block; }
-
-  /* ── Metric cards ── */
-  .mets { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin-bottom: 16px; }
-  .met { background: var(--bg-primary); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 13px 15px; }
-  .ml { font-size: 11px; color: var(--text-secondary); margin-bottom: 5px; }
-  .mv { font-size: 24px; font-weight: 600; line-height: 1; }
-  .ms { font-size: 10px; color: var(--text-secondary); margin-top: 4px; }
-  .mv.r { color: var(--danger-txt); } .mv.a { color: var(--warn-txt); }
-  .mv.g { color: #27500a; } .mv.b { color: var(--info-txt); }
-  .mv.p { color: var(--purple-txt); } .mv.t { color: #085041; }
-
-  /* ── Cards & tables ── */
-  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
-  .card { background: var(--bg-primary); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
-  .card-hdr { padding: 10px 15px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
-  .card-title { font-size: 13px; font-weight: 600; }
-  .fullcard { background: var(--bg-primary); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 14px; }
-  .tbl { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 12px; }
-  .tbl th { padding: 8px 12px; background: var(--bg-secondary); font-weight: 600; font-size: 11px; color: var(--text-secondary); text-align: left; border-bottom: 1px solid var(--border); }
-  .tbl td { padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; cursor: pointer; }
-  .tbl tr:last-child td { border-bottom: none; }
-  .tbl tr:hover td { background: var(--info-bg); }
-
-  /* ── Badges ── */
-  .bdg { font-size: 10px; padding: 2px 8px; border-radius: var(--radius-md); font-weight: 600; }
-  .bdg-r { background: var(--danger-bg); color: var(--danger-txt); }
-  .bdg-a { background: var(--warn-bg); color: var(--warn-txt); }
-  .bdg-b { background: var(--info-bg); color: var(--info-txt); }
-  .bdg-g { background: var(--success-bg); color: var(--success-txt); }
-  .bdg-p { background: var(--purple-bg); color: var(--purple-txt); }
-  .bdg-t { background: #e1f5ee; color: #085041; }
-  .bdg-s { background: var(--bg-secondary); color: var(--text-secondary); }
-  .pill { display: inline-block; padding: 2px 7px; border-radius: var(--radius-md); font-size: 11px; font-weight: 500; white-space: nowrap; }
-
-  /* ── Job list items ── */
-  .jlist { list-style: none; }
-  .ji { padding: 9px 15px; border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; gap: 8px; cursor: pointer; transition: background 0.1s; }
-  .ji:last-child { border-bottom: none; }
-  .ji:hover { background: var(--info-bg); }
-  .dot { width: 7px; height: 7px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
-  .dr { background: #e24b4a; } .da { background: #ef9f27; } .db { background: #378add; } .dg { background: #1d9e75; } .dt { background: var(--teal); }
-  .jname { font-size: 12px; font-weight: 600; line-height: 1.4; }
-  .jdesc { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
-  .jdate { font-size: 11px; font-weight: 600; flex-shrink: 0; padding-left: 8px; margin-top: 3px; }
-  .jdate.r { color: var(--danger-txt); } .jdate.a { color: var(--warn-txt); } .jdate.b { color: var(--info-txt); }
-
-  /* ── Search bar ── */
-  .sbar { padding: 10px 15px; border-bottom: 1px solid var(--border); display: flex; gap: 8px; flex-wrap: wrap; }
-  .sbar input, .sbar select { font-size: 12px; padding: 6px 10px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--bg-secondary); color: var(--text-primary); }
-  .sbar input { flex: 1; min-width: 120px; }
-
-  /* ── Modal ── */
-  .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: flex-start; justify-content: center; padding: 40px 20px; overflow-y: auto; }
-  .overlay.on { display: flex; }
-  .modal { background: var(--bg-primary); border-radius: var(--radius-lg); border: 1px solid var(--border); width: 100%; max-width: 680px; overflow: hidden; }
-  .modal-hdr { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-  .modal-body { padding: 18px 20px; }
-  .modal-footer { padding: 13px 20px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end; }
-  .mclose { font-size: 20px; cursor: pointer; color: var(--text-secondary); background: none; border: none; line-height: 1; }
-  .tl { list-style: none; }
-  .tl-item { display: flex; gap: 12px; padding-bottom: 16px; }
-  .tl-item:last-child { padding-bottom: 0; }
-  .tl-left { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; width: 30px; }
-  .tl-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-top: 3px; }
-  .tl-line { flex: 1; width: 1px; background: var(--border); margin-top: 5px; }
-  .tl-item:last-child .tl-line { display: none; }
-  .tl-date { font-size: 11px; color: var(--text-secondary); margin-bottom: 3px; }
-  .tl-text { font-size: 13px; line-height: 1.5; }
-  .slbl { font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin: 16px 0 8px; }
-  .slbl:first-child { margin-top: 0; }
-  .igrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 4px; }
-  .iitem { background: var(--bg-secondary); border-radius: var(--radius-md); padding: 8px 10px; }
-  .ilbl { font-size: 10px; color: var(--text-secondary); margin-bottom: 3px; }
-  .ival { font-size: 13px; font-weight: 500; }
-  .nab { background: var(--warn-bg); border-radius: var(--radius-md); padding: 11px 13px; }
-
-  /* ── Marketing feed ── */
-  .lead { padding: 13px 15px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.1s; }
-  .lead:last-child { border-bottom: none; }
-  .lead:hover { background: var(--info-bg); }
-  .lead-title { font-size: 13px; font-weight: 600; margin-bottom: 5px; }
-  .lead-meta { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 5px; }
-  .lead-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
-  .tag { font-size: 11px; padding: 2px 7px; border-radius: var(--radius-md); }
-  .tag-hot { background: var(--danger-bg); color: var(--danger-txt); font-weight: 600; }
-  .tag-src { background: var(--info-bg); color: var(--info-txt); }
-  .tag-loc { background: var(--bg-secondary); color: var(--text-secondary); }
-  .tag-val { background: #e1f5ee; color: #085041; }
-
-  /* ── Scan animation ── */
-  .scan-wrap { display: flex; align-items: center; gap: 10px; padding: 10px 15px; border-bottom: 1px solid var(--border); font-size: 12px; color: var(--text-secondary); }
-  .scan-bar { flex: 1; height: 3px; background: var(--bg-secondary); border-radius: 2px; overflow: hidden; }
-  .scan-fill { height: 100%; background: var(--teal); border-radius: 2px; animation: sc 2.2s ease-in-out infinite; }
-  @keyframes sc { 0% { width: 0; } 60% { width: 80%; } 100% { width: 100%; } }
-  .pulse { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #e24b4a; margin-right: 4px; animation: pu 1.5s infinite; }
-  @keyframes pu { 0%,100% { opacity: 1; } 50% { opacity: 0.2; } }
-
-  /* ── Sources ── */
-  .src-row { padding: 9px 15px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
-  .src-row:last-child { border-bottom: none; }
-  .src-row:hover { background: var(--bg-secondary); }
-  .sd { width: 8px; height: 8px; border-radius: 50%; }
-  .sd-g { background: #639922; } .sd-a { background: #ef9f27; } .sd-b { background: #378add; }
-
-  /* ── Keywords ── */
-  .kw { display: inline-block; padding: 5px 11px; border-radius: var(--radius-md); font-size: 12px; background: var(--bg-secondary); color: var(--text-secondary); border: 1px solid var(--border); cursor: pointer; margin: 3px; transition: all 0.1s; }
-  .kw.on { background: var(--info-bg); color: var(--info-txt); border-color: #b5d4f4; font-weight: 600; }
-
-  /* ── Planning ── */
-  .plan-row { padding: 10px 15px; border-bottom: 1px solid var(--border); display: grid; grid-template-columns: 100px 1fr 100px 85px; gap: 10px; font-size: 12px; align-items: center; cursor: pointer; }
-  .plan-row:hover { background: var(--info-bg); }
-  .plan-row:last-child { border-bottom: none; }
-
-  /* ── Future opps ── */
-  .fut-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
-  .fc2 { background: var(--bg-primary); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
-  .fh2 { padding: 10px 15px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: var(--bg-secondary); }
-  .fp { display: flex; align-items: flex-start; gap: 8px; padding: 8px 15px; border-bottom: 1px solid var(--border); cursor: pointer; }
-  .fp:last-child { border-bottom: none; }
-  .fp:hover { background: var(--info-bg); }
-  .fpn { font-size: 12px; font-weight: 600; }
-  .fpd { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
-  .fpa { font-size: 11px; color: var(--purple-txt); margin-top: 3px; font-weight: 500; }
-
-  /* ── Log rows ── */
-  .log-row { display: grid; grid-template-columns: 72px 70px 130px 1fr 52px; gap: 0; padding: 8px 15px; border-bottom: 1px solid var(--border); font-size: 12px; align-items: center; }
-  .log-row:last-child { border-bottom: none; }
-  .log-row:hover { background: var(--bg-secondary); }
-
-  /* ── Alert items ── */
-  .alert-item { padding: 12px 15px; border-bottom: 1px solid var(--border); display: flex; gap: 12px; align-items: flex-start; }
-  .alert-item:last-child { border-bottom: none; }
-  .alert-icon { width: 30px; height: 30px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
-  .qbtns { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
-  .info-bar { font-size: 12px; padding: 8px 12px; background: var(--info-bg); border-radius: var(--radius-md); border: 1px solid #b5d4f4; color: var(--info-txt); margin-bottom: 14px; }
-
-  @media (max-width: 700px) {
-    .mets { grid-template-columns: repeat(2, 1fr); }
-    .two { grid-template-columns: 1fr; }
-    .fut-grid { grid-template-columns: 1fr; }
-  }
+  .topbar { display:flex;align-items:center;justify-content:space-between;padding:13px 24px;background:var(--bg-primary);border-bottom:1px solid var(--border); }
+  .logo { display:flex;align-items:center;gap:10px; }
+  .logo svg { width:28px;height:28px; }
+  .lt { font-size:16px;font-weight:600;color:var(--navy); }
+  .ls { font-size:16px;font-weight:600;color:var(--teal); }
+  .topbar-right { display:flex;align-items:center;gap:10px; }
+  .date-badge { font-size:11px;color:var(--text-secondary);background:var(--bg-secondary);padding:4px 10px;border-radius:var(--radius-md);border:1px solid var(--border); }
+  .btn { padding:6px 14px;font-size:12px;border-radius:var(--radius-md);border:1px solid var(--border);background:var(--bg-primary);color:var(--text-primary);cursor:pointer;transition:background 0.15s; }
+  .btn:hover { background:var(--bg-secondary); }
+  .btn-primary { background:var(--navy);color:#fff;border-color:var(--navy); }
+  .btn-primary:hover { opacity:0.9; }
+  .btn-danger { background:var(--danger-bg);color:var(--danger-txt);border-color:#f5c6c6; }
+  .module-tabs { display:flex;background:var(--bg-primary);border-bottom:1px solid var(--border);padding:0 24px;gap:0; }
+  .mtab { padding:11px 20px;font-size:13px;font-weight:500;cursor:pointer;color:var(--text-secondary);border-bottom:2.5px solid transparent;transition:all 0.15s;display:flex;align-items:center;gap:7px; }
+  .mtab.on { color:var(--navy);border-bottom-color:var(--navy); }
+  .mtab.mkt.on { color:var(--teal);border-bottom-color:var(--teal); }
+  .mtab:hover { color:var(--text-primary); }
+  .count-badge { font-size:10px;padding:1px 6px;border-radius:10px;font-weight:600; }
+  .cb-red { background:var(--danger-bg);color:var(--danger-txt); }
+  .cb-teal { background:#e1f5ee;color:#085041; }
+  .module { display:none; }
+  .module.on { display:block; }
+  .subnav { display:flex;gap:3px;padding:10px 24px;background:var(--bg-secondary);border-bottom:1px solid var(--border); }
+  .snt { padding:5px 13px;font-size:12px;border-radius:var(--radius-md);cursor:pointer;border:1px solid transparent;color:var(--text-secondary);background:transparent;transition:all 0.1s; }
+  .snt.on { background:var(--bg-primary);border-color:var(--border);color:var(--text-primary);font-weight:500; }
+  .snt:hover { color:var(--text-primary); }
+  .pg { display:none;padding:20px 24px; }
+  .pg.on { display:block; }
+  .mets { display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-bottom:16px; }
+  .met { background:var(--bg-primary);border:1px solid var(--border);border-radius:var(--radius-lg);padding:13px 15px; }
+  .ml { font-size:11px;color:var(--text-secondary);margin-bottom:5px; }
+  .mv { font-size:24px;font-weight:600;line-height:1; }
+  .ms { font-size:10px;color:var(--text-secondary);margin-top:4px; }
+  .mv.r{color:var(--danger-txt)}.mv.a{color:var(--warn-txt)}.mv.g{color:#27500a}.mv.b{color:var(--info-txt)}.mv.p{color:var(--purple-txt)}.mv.t{color:#085041}
+  .two { display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px; }
+  .card { background:var(--bg-primary);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden; }
+  .card-hdr { padding:10px 15px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between; }
+  .card-title { font-size:13px;font-weight:600; }
+  .fullcard { background:var(--bg-primary);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:14px; }
+  .tbl { width:100%;border-collapse:collapse;table-layout:fixed;font-size:12px; }
+  .tbl th { padding:8px 12px;background:var(--bg-secondary);font-weight:600;font-size:11px;color:var(--text-secondary);text-align:left;border-bottom:1px solid var(--border); }
+  .tbl td { padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:middle;cursor:pointer; }
+  .tbl tr:last-child td { border-bottom:none; }
+  .tbl tr:hover td { background:var(--info-bg); }
+  .bdg { font-size:10px;padding:2px 8px;border-radius:var(--radius-md);font-weight:600; }
+  .bdg-r{background:var(--danger-bg);color:var(--danger-txt)}.bdg-a{background:var(--warn-bg);color:var(--warn-txt)}.bdg-b{background:var(--info-bg);color:var(--info-txt)}.bdg-g{background:var(--success-bg);color:var(--success-txt)}.bdg-p{background:var(--purple-bg);color:var(--purple-txt)}.bdg-t{background:#e1f5ee;color:#085041}.bdg-s{background:var(--bg-secondary);color:var(--text-secondary)}
+  .pill { display:inline-block;padding:2px 7px;border-radius:var(--radius-md);font-size:11px;font-weight:500;white-space:nowrap; }
+  .jlist { list-style:none; }
+  .ji { padding:9px 15px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:8px;cursor:pointer;transition:background 0.1s; }
+  .ji:last-child { border-bottom:none; }
+  .ji:hover { background:var(--info-bg); }
+  .dot { width:7px;height:7px;border-radius:50%;margin-top:5px;flex-shrink:0; }
+  .dr{background:#e24b4a}.da{background:#ef9f27}.db{background:#378add}.dg{background:#1d9e75}.dt{background:var(--teal)}
+  .jname { font-size:12px;font-weight:600;line-height:1.4; }
+  .jdesc { font-size:11px;color:var(--text-secondary);margin-top:2px; }
+  .jdate { font-size:11px;font-weight:600;flex-shrink:0;padding-left:8px;margin-top:3px; }
+  .jdate.r{color:var(--danger-txt)}.jdate.a{color:var(--warn-txt)}.jdate.b{color:var(--info-txt)}
+  .sbar { padding:10px 15px;border-bottom:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap; }
+  .sbar input,.sbar select { font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--bg-secondary);color:var(--text-primary); }
+  .sbar input { flex:1;min-width:120px; }
+  .overlay { display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:flex-start;justify-content:center;padding:40px 20px;overflow-y:auto; }
+  .overlay.on { display:flex; }
+  .modal { background:var(--bg-primary);border-radius:var(--radius-lg);border:1px solid var(--border);width:100%;max-width:680px;overflow:hidden; }
+  .modal-hdr { padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:12px; }
+  .modal-body { padding:18px 20px; }
+  .modal-footer { padding:13px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end; }
+  .mclose { font-size:20px;cursor:pointer;color:var(--text-secondary);background:none;border:none;line-height:1; }
+  .tl { list-style:none; }
+  .tl-item { display:flex;gap:12px;padding-bottom:16px; }
+  .tl-item:last-child { padding-bottom:0; }
+  .tl-left { display:flex;flex-direction:column;align-items:center;flex-shrink:0;width:30px; }
+  .tl-dot { width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:3px; }
+  .tl-line { flex:1;width:1px;background:var(--border);margin-top:5px; }
+  .tl-item:last-child .tl-line { display:none; }
+  .tl-date { font-size:11px;color:var(--text-secondary);margin-bottom:3px; }
+  .tl-text { font-size:13px;line-height:1.5; }
+  .slbl { font-size:11px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.05em;margin:16px 0 8px; }
+  .slbl:first-child { margin-top:0; }
+  .igrid { display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px; }
+  .iitem { background:var(--bg-secondary);border-radius:var(--radius-md);padding:8px 10px; }
+  .ilbl { font-size:10px;color:var(--text-secondary);margin-bottom:3px; }
+  .ival { font-size:13px;font-weight:500; }
+  .nab { background:var(--warn-bg);border-radius:var(--radius-md);padding:11px 13px; }
+  .lead { padding:13px 15px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.1s; }
+  .lead:last-child { border-bottom:none; }
+  .lead:hover { background:var(--info-bg); }
+  .lead-title { font-size:13px;font-weight:600;margin-bottom:5px; }
+  .lead-meta { display:flex;gap:6px;flex-wrap:wrap;margin-bottom:5px; }
+  .lead-desc { font-size:12px;color:var(--text-secondary);line-height:1.5; }
+  .tag { font-size:11px;padding:2px 7px;border-radius:var(--radius-md); }
+  .tag-hot{background:var(--danger-bg);color:var(--danger-txt);font-weight:600}.tag-src{background:var(--info-bg);color:var(--info-txt)}.tag-loc{background:var(--bg-secondary);color:var(--text-secondary)}.tag-val{background:#e1f5ee;color:#085041}
+  .scan-wrap { display:flex;align-items:center;gap:10px;padding:10px 15px;border-bottom:1px solid var(--border);font-size:12px;color:var(--text-secondary); }
+  .scan-bar { flex:1;height:3px;background:var(--bg-secondary);border-radius:2px;overflow:hidden; }
+  .scan-fill { height:100%;background:var(--teal);border-radius:2px;animation:sc 2.2s ease-in-out infinite; }
+  @keyframes sc{0%{width:0}60%{width:80%}100%{width:100%}}
+  .pulse { display:inline-block;width:7px;height:7px;border-radius:50%;background:#e24b4a;margin-right:4px;animation:pu 1.5s infinite; }
+  @keyframes pu{0%,100%{opacity:1}50%{opacity:0.2}}
+  .src-row { padding:9px 15px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between; }
+  .src-row:last-child { border-bottom:none; }
+  .src-row:hover { background:var(--bg-secondary); }
+  .sd { width:8px;height:8px;border-radius:50%; }
+  .sd-g{background:#639922}.sd-a{background:#ef9f27}.sd-b{background:#378add}
+  .kw { display:inline-block;padding:5px 11px;border-radius:var(--radius-md);font-size:12px;background:var(--bg-secondary);color:var(--text-secondary);border:1px solid var(--border);cursor:pointer;margin:3px;transition:all 0.1s; }
+  .kw.on { background:var(--info-bg);color:var(--info-txt);border-color:#b5d4f4;font-weight:600; }
+  .plan-row { padding:10px 15px;border-bottom:1px solid var(--border);display:grid;grid-template-columns:100px 1fr 100px 85px;gap:10px;font-size:12px;align-items:center;cursor:pointer; }
+  .plan-row:hover { background:var(--info-bg); }
+  .plan-row:last-child { border-bottom:none; }
+  .fut-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px; }
+  .fc2 { background:var(--bg-primary);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden; }
+  .fh2 { padding:10px 15px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--bg-secondary); }
+  .fp { display:flex;align-items:flex-start;gap:8px;padding:8px 15px;border-bottom:1px solid var(--border);cursor:pointer; }
+  .fp:last-child { border-bottom:none; }
+  .fp:hover { background:var(--info-bg); }
+  .fpn{font-size:12px;font-weight:600}.fpd{font-size:11px;color:var(--text-secondary);margin-top:2px}.fpa{font-size:11px;color:var(--purple-txt);margin-top:3px;font-weight:500}
+  .log-row { display:grid;grid-template-columns:72px 70px 130px 1fr 52px;gap:0;padding:8px 15px;border-bottom:1px solid var(--border);font-size:12px;align-items:center; }
+  .log-row:last-child { border-bottom:none; }
+  .log-row:hover { background:var(--bg-secondary); }
+  .alert-item { padding:12px 15px;border-bottom:1px solid var(--border);display:flex;gap:12px;align-items:flex-start; }
+  .alert-item:last-child { border-bottom:none; }
+  .alert-icon { width:30px;height:30px;border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0; }
+  .qbtns { display:flex;gap:8px;flex-wrap:wrap;margin-top:8px; }
+  .info-bar { font-size:12px;padding:8px 12px;background:var(--info-bg);border-radius:var(--radius-md);border:1px solid #b5d4f4;color:var(--info-txt);margin-bottom:14px; }
+  /* Form styles */
+  .form-row { margin-bottom:10px; }
+  .form-row label { display:block;font-size:11px;font-weight:600;color:var(--text-secondary);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.04em; }
+  .form-row input,.form-row select,.form-row textarea { width:100%;padding:8px 10px;font-size:13px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--bg-secondary);color:var(--text-primary);font-family:inherit; }
+  .form-row textarea { resize:vertical;min-height:80px; }
+  .form-grid { display:grid;grid-template-columns:1fr 1fr;gap:10px; }
+  .add-comm-box { border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;margin-top:14px;background:var(--bg-secondary); }
+  .add-comm-box .slbl { margin-top:0; }
+  /* Login screen */
+  #login-screen { display:none;position:fixed;inset:0;background:var(--bg-tertiary);z-index:9999;align-items:center;justify-content:center; }
+  .login-card { background:var(--bg-primary);border:1px solid var(--border);border-radius:var(--radius-lg);padding:36px 40px;width:100%;max-width:380px; }
+  .login-logo { display:flex;align-items:center;gap:10px;margin-bottom:24px; }
+  .login-logo svg { width:32px;height:32px; }
+  .login-title { font-size:18px;font-weight:600;margin-bottom:6px; }
+  .login-sub { font-size:13px;color:var(--text-secondary);margin-bottom:24px; }
+  .login-err { font-size:12px;color:var(--danger-txt);margin-top:8px;min-height:18px; }
+  @media(max-width:700px){.mets{grid-template-columns:repeat(2,1fr)}.two{grid-template-columns:1fr}.fut-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
+
+<!-- LOGIN SCREEN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <svg viewBox="0 0 28 28" fill="none"><rect x="1" y="1" width="11" height="11" rx="2.5" fill="#1ab8a8"/><rect x="15" y="1" width="11" height="11" rx="2.5" fill="#1ab8a8" opacity="0.45"/><rect x="1" y="15" width="11" height="11" rx="2.5" fill="#1ab8a8" opacity="0.45"/><rect x="15" y="15" width="11" height="11" rx="2.5" fill="#1a6fa8"/></svg>
+      <span class="lt">chine&nbsp;</span><span class="ls">brickwork</span>
+    </div>
+    <div class="login-title">Commercial Platform</div>
+    <div class="login-sub">Sign in with your Chine Brickwork account</div>
+    <div class="form-row"><label>Email</label><input type="email" id="li-email" placeholder="you@chinebrickwork.co.uk" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <div class="form-row"><label>Password</label><input type="password" id="li-pass" placeholder="Password" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <div class="login-err" id="li-err"></div>
+    <button class="btn btn-primary" style="width:100%;margin-top:8px;padding:10px" onclick="doLogin()">Sign in</button>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app" style="display:none">
 <div class="app">
 
 <!-- TOP BAR -->
 <div class="topbar">
   <div class="logo">
-    <svg viewBox="0 0 28 28" fill="none">
-      <rect x="1" y="1" width="11" height="11" rx="2.5" fill="#1ab8a8"/>
-      <rect x="15" y="1" width="11" height="11" rx="2.5" fill="#1ab8a8" opacity="0.45"/>
-      <rect x="1" y="15" width="11" height="11" rx="2.5" fill="#1ab8a8" opacity="0.45"/>
-      <rect x="15" y="15" width="11" height="11" rx="2.5" fill="#1a6fa8"/>
-    </svg>
+    <svg viewBox="0 0 28 28" fill="none"><rect x="1" y="1" width="11" height="11" rx="2.5" fill="#1ab8a8"/><rect x="15" y="1" width="11" height="11" rx="2.5" fill="#1ab8a8" opacity="0.45"/><rect x="1" y="15" width="11" height="11" rx="2.5" fill="#1ab8a8" opacity="0.45"/><rect x="15" y="15" width="11" height="11" rx="2.5" fill="#1a6fa8"/></svg>
     <span class="lt">chine&nbsp;</span><span class="ls">brickwork</span>
     <span style="font-size:12px;color:var(--text-secondary);margin-left:8px">Commercial Platform</span>
   </div>
   <div class="topbar-right">
-    <div class="date-badge" id="today-date">Loading...</div>
+    <div class="date-badge" id="today-date"></div>
+    <span id="user-badge" style="font-size:11px;color:var(--text-secondary);background:var(--bg-secondary);padding:4px 10px;border-radius:var(--radius-md);border:1px solid var(--border)"></span>
     <button class="btn btn-primary" onclick="morningBriefing()">Morning briefing</button>
+    <button class="btn" onclick="doLogout()">Sign out</button>
   </div>
 </div>
 
@@ -231,17 +205,15 @@
 <div class="module-tabs">
   <div class="mtab on" onclick="switchModule('crm',this)">
     <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="1" y="1" width="5" height="5" rx="1" fill="#1a6fa8"/><rect x="8" y="1" width="5" height="5" rx="1" fill="#1a6fa8" opacity="0.4"/><rect x="1" y="8" width="5" height="5" rx="1" fill="#1a6fa8" opacity="0.4"/><rect x="8" y="8" width="5" height="5" rx="1" fill="#1a6fa8"/></svg>
-    Job chasing CRM
-    <span class="count-badge cb-red" id="crm-badge">16</span>
+    Job chasing CRM <span class="count-badge cb-red" id="crm-badge">0</span>
   </div>
   <div class="mtab mkt" onclick="switchModule('mkt',this)">
     <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5.5" stroke="#1ab8a8" stroke-width="1.3"/><path d="M4.5 6.5h4M6.5 4.5v4" stroke="#1ab8a8" stroke-width="1.3" stroke-linecap="round"/></svg>
-    Marketing agent
-    <span class="count-badge cb-teal"><span class="pulse" style="width:6px;height:6px;margin-right:3px"></span><span id="mkt-badge">7</span></span>
+    Marketing agent <span class="count-badge cb-teal"><span class="pulse" style="width:6px;height:6px;margin-right:3px"></span><span id="mkt-badge">0</span></span>
   </div>
 </div>
 
-<!-- ════════════════════════════════════ CRM MODULE ════════════════════════════════════ -->
+<!-- CRM MODULE -->
 <div id="mod-crm" class="module on">
   <div class="subnav">
     <div class="snt on" onclick="sp('crm','c-overview',this)">Overview</div>
@@ -251,48 +223,41 @@
     <div class="snt" onclick="sp('crm','c-future',this)">Future opportunities</div>
   </div>
 
-  <!-- OVERVIEW -->
   <div id="c-overview" class="pg on">
     <div class="mets">
-      <div class="met"><div class="ml">Overdue</div><div class="mv r" id="cnt-overdue">16</div><div class="ms">Action now</div></div>
-      <div class="met"><div class="ml">Due this week</div><div class="mv a" id="cnt-week">9</div><div class="ms">By 07 Apr</div></div>
-      <div class="met"><div class="ml">Active jobs</div><div class="mv b">48</div><div class="ms">20 contractors</div></div>
-      <div class="met"><div class="ml">Secured</div><div class="mv g">4</div><div class="ms">CB 340, 332+</div></div>
-      <div class="met"><div class="ml">Future pipeline</div><div class="mv p">24</div><div class="ms">12 contractors</div></div>
+      <div class="met"><div class="ml">Overdue</div><div class="mv r" id="cnt-overdue">—</div><div class="ms">Action now</div></div>
+      <div class="met"><div class="ml">Due this week</div><div class="mv a" id="cnt-week">—</div><div class="ms">Next 7 days</div></div>
+      <div class="met"><div class="ml">Active jobs</div><div class="mv b" id="cnt-active">—</div><div class="ms">In pipeline</div></div>
+      <div class="met"><div class="ml">Secured</div><div class="mv g" id="cnt-secured">—</div><div class="ms">This year</div></div>
+      <div class="met"><div class="ml">Future pipeline</div><div class="mv p" id="cnt-future">—</div><div class="ms">Tracked projects</div></div>
     </div>
-    <div class="info-bar">Click any job row to view its full communication history and draft a chase email.</div>
+    <div class="info-bar">Click any job row to view its full communication history, log a call, or update the next action.</div>
     <div class="two">
       <div class="card">
-        <div class="card-hdr"><span class="card-title">Overdue actions</span><span class="bdg bdg-r">16 overdue</span></div>
+        <div class="card-hdr"><span class="card-title">Overdue actions</span><span class="bdg bdg-r" id="badge-overdue">0 overdue</span></div>
         <ul class="jlist" id="ov-overdue"></ul>
       </div>
       <div class="card">
-        <div class="card-hdr"><span class="card-title">Due this week</span><span class="bdg bdg-a">01–07 Apr</span></div>
+        <div class="card-hdr"><span class="card-title">Due this week</span><span class="bdg bdg-a" id="badge-week">0 due</span></div>
         <ul class="jlist" id="ov-week"></ul>
       </div>
     </div>
-    <div class="qbtns">
-      <button class="btn" onclick="alert('Open in your email client to draft Hill chase emails, or connect to the Anthropic API to automate.')">Draft Hill emails</button>
-      <button class="btn" onclick="alert('Open in your email client to draft Lovell chase emails.')">Draft Lovell emails</button>
-      <button class="btn" onclick="alert('Open in your email client to draft McAleer chase emails.')">Draft McAleer emails</button>
-    </div>
   </div>
 
-  <!-- PIPELINE -->
   <div id="c-pipeline" class="pg">
     <div class="sbar">
       <input id="ps" placeholder="Search contractor or project..." oninput="filterPipe()">
       <select id="pst" onchange="filterPipe()"><option value="">All stages</option><option>Submitted</option><option>BOQ Submitted</option><option>Being Priced</option><option>PCSA</option><option>Secured</option><option>Returned Take-Off</option></select>
       <select id="pow" onchange="filterPipe()"><option value="">All owners</option><option>TC</option><option>SO</option><option>JS</option><option>RL</option><option>DML</option></select>
+      <button class="btn btn-primary" onclick="openNewJob()">+ Add job</button>
     </div>
     <div class="fullcard"><table class="tbl"><thead><tr>
       <th style="width:75px">CB No.</th><th style="width:140px">Contractor</th><th>Project</th>
-      <th style="width:120px">Stage</th><th style="width:44px">Owner</th>
+      <th style="width:130px">Stage</th><th style="width:44px">Owner</th>
       <th style="width:95px">Next action</th><th style="width:85px">Status</th>
     </tr></thead><tbody id="pipe-body"></tbody></table></div>
   </div>
 
-  <!-- ALL ACTIONS -->
   <div id="c-actions" class="pg">
     <div class="fullcard"><table class="tbl"><thead><tr>
       <th style="width:75px">CB No.</th><th style="width:130px">Contractor</th><th>Project</th>
@@ -300,12 +265,11 @@
     </tr></thead><tbody id="act-body"></tbody></table></div>
   </div>
 
-  <!-- CALL LOG -->
   <div id="c-log" class="pg">
     <div class="fullcard">
       <div style="padding:10px 15px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
-        <strong>Call &amp; activity log — 41 entries, 25–31 March 2026</strong>
-        <button class="btn" onclick="alert('To log a new call, add a row to the jobs data array in the JavaScript section of this file.')">Log a call</button>
+        <strong id="log-title">Call &amp; activity log</strong>
+        <button class="btn btn-primary" onclick="openLogCall()">+ Log a call</button>
       </div>
       <div class="log-row" style="background:var(--bg-secondary);font-weight:600;font-size:11px;color:var(--text-secondary)">
         <div>Date</div><div>CB No.</div><div>Contractor</div><div>Action taken</div><div>Owner</div>
@@ -314,36 +278,34 @@
     </div>
   </div>
 
-  <!-- FUTURE OPPS -->
   <div id="c-future" class="pg">
     <div class="mets" style="grid-template-columns:repeat(3,minmax(0,1fr))">
-      <div class="met"><div class="ml">Future opportunities</div><div class="mv p">24</div><div class="ms">12 contractors</div></div>
-      <div class="met"><div class="ml">Tenders imminent</div><div class="mv g">3</div><div class="ms">April 2026</div></div>
-      <div class="met"><div class="ml">Tenders received</div><div class="mv a">2</div><div class="ms">St William Mar 2026</div></div>
+      <div class="met"><div class="ml">Future opportunities</div><div class="mv p" id="cnt-fut-total">—</div><div class="ms">Tracked projects</div></div>
+      <div class="met"><div class="ml">Tenders imminent</div><div class="mv g" id="cnt-fut-imminent">—</div><div class="ms">Next 30 days</div></div>
+      <div class="met"><div class="ml">Contractors tracked</div><div class="mv a" id="cnt-fut-contractors">—</div><div class="ms">In pipeline</div></div>
     </div>
     <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
-      <input id="fs" placeholder="Search contractor or project..." oninput="filterFut()" style="flex:1;min-width:160px;font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--bg-secondary);color:var(--text-primary)">
-      <select id="ft" onchange="filterFut()" style="font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--bg-secondary);color:var(--text-primary)"><option value="">All timings</option><option>Imminent</option><option>Mid 2026</option><option>Late 2026</option><option>TBC</option></select>
+      <input id="fs" placeholder="Search contractor or project..." oninput="filterFuture()" style="flex:1;min-width:160px;font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--bg-secondary);color:var(--text-primary)">
+      <select id="ft" onchange="filterFuture()" style="font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--bg-secondary);color:var(--text-primary)"><option value="">All timings</option><option>Imminent</option><option>Mid 2026</option><option>Late 2026</option><option>TBC</option></select>
     </div>
     <div class="fut-grid" id="fut-grid"></div>
   </div>
 </div>
 
-<!-- ════════════════════════════════════ MARKETING MODULE ════════════════════════════════════ -->
+<!-- MARKETING MODULE -->
 <div id="mod-mkt" class="module">
   <div class="subnav">
-    <div class="snt on" onclick="sp('mkt','m-feed',this)">Live feed <span class="count-badge cb-teal" style="margin-left:4px"><span class="pulse" style="width:5px;height:5px;margin-right:2px"></span>7</span></div>
+    <div class="snt on" onclick="sp('mkt','m-feed',this)">Live feed <span class="count-badge cb-teal" style="margin-left:4px"><span class="pulse" style="width:5px;height:5px;margin-right:2px"></span><span id="mkt-badge2">0</span></span></div>
     <div class="snt" onclick="sp('mkt','m-sources',this)">Sources</div>
     <div class="snt" onclick="sp('mkt','m-planning',this)">Planning radar</div>
     <div class="snt" onclick="sp('mkt','m-keywords',this)">Keywords</div>
     <div class="snt" onclick="sp('mkt','m-alerts',this)">Alerts</div>
   </div>
 
-  <!-- FEED -->
   <div id="m-feed" class="pg on">
     <div class="mets">
-      <div class="met"><div class="ml">New leads today</div><div class="mv t" id="leads-today">7</div><div class="ms">Since last scan</div></div>
-      <div class="met"><div class="ml">Hot matches</div><div class="mv r">3</div><div class="ms">High relevance</div></div>
+      <div class="met"><div class="ml">New leads today</div><div class="mv t" id="leads-today">—</div><div class="ms">Since last scan</div></div>
+      <div class="met"><div class="ml">Hot matches</div><div class="mv r" id="leads-hot">—</div><div class="ms">High relevance</div></div>
       <div class="met"><div class="ml">Sources active</div><div class="mv g">12</div><div class="ms">of 14 monitored</div></div>
       <div class="met"><div class="ml">Added to CRM</div><div class="mv p">2</div><div class="ms">This week</div></div>
       <div class="met"><div class="ml">Last scan</div><div class="mv" style="font-size:15px" id="last-scan">07:42</div><div class="ms">Today</div></div>
@@ -361,19 +323,13 @@
           <select id="feed-f" onchange="filterFeed()" style="font-size:11px;padding:4px 8px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--bg-secondary);color:var(--text-primary)">
             <option value="">All sources</option><option>Contracts Finder</option><option>Find a Tender</option><option>Contractor websites</option><option>Planning portal</option><option>Construction news</option>
           </select>
-          <span class="bdg bdg-t" id="feed-cnt">7 results</span>
+          <span class="bdg bdg-t" id="feed-cnt">0 results</span>
         </div>
       </div>
       <div id="feed-list"></div>
     </div>
-    <div class="qbtns">
-      <button class="btn" onclick="alert('To connect live scanning: implement the Contracts Finder API or use a scheduled web scraper pointed at find-tender.service.gov.uk. See the technical specification document for details.')">Search Contracts Finder</button>
-      <button class="btn" onclick="alert('Find a Tender API: https://www.find-tender.service.gov.uk/api/1.0/ocds/produce. See technical spec for integration details.')">Search Find a Tender</button>
-      <button class="btn" onclick="alert('Contractor website monitoring requires a scheduled scraper. See technical specification for setup instructions.')">Scan contractor sites</button>
-    </div>
   </div>
 
-  <!-- SOURCES -->
   <div id="m-sources" class="pg">
     <div class="two">
       <div class="card">
@@ -382,7 +338,6 @@
         <div class="src-row"><div><div style="font-weight:600">Find a Tender</div><div style="font-size:11px;color:var(--text-secondary)">find-tender.service.gov.uk · High value</div></div><div style="display:flex;align-items:center;gap:6px"><div class="sd sd-g"></div><span style="font-size:11px;color:var(--text-secondary)">Active</span></div></div>
         <div class="src-row"><div><div style="font-weight:600">Glenigan</div><div style="font-size:11px;color:var(--text-secondary)">Subscription required — best lead quality</div></div><div style="display:flex;align-items:center;gap:6px"><div class="sd sd-a"></div><span style="font-size:11px;color:var(--warn-txt)">Upgrade</span></div></div>
         <div class="src-row"><div><div style="font-weight:600">Barbour ABI</div><div style="font-size:11px;color:var(--text-secondary)">Subscription — planning intelligence</div></div><div style="display:flex;align-items:center;gap:6px"><div class="sd sd-a"></div><span style="font-size:11px;color:var(--warn-txt)">Upgrade</span></div></div>
-        <div class="src-row"><div><div style="font-weight:600">The Chest / ProContract</div><div style="font-size:11px;color:var(--text-secondary)">Housing associations · Free registration</div></div><div style="display:flex;align-items:center;gap:6px"><div class="sd sd-b"></div><span style="font-size:11px;color:var(--info-txt)">Add</span></div></div>
       </div>
       <div class="card">
         <div class="card-hdr"><span class="card-title">Contractor websites</span><span class="bdg bdg-b">8 monitored</span></div>
@@ -393,26 +348,12 @@
         <div class="src-row"><div><div style="font-weight:600">Kier · Bouygues · Ardmore + 3 more</div><div style="font-size:11px;color:var(--text-secondary)">Monitored for project news</div></div><div style="display:flex;align-items:center;gap:6px"><div class="sd sd-g"></div><span style="font-size:11px;color:var(--text-secondary)">Active</span></div></div>
       </div>
     </div>
-    <div class="two">
-      <div class="card">
-        <div class="card-hdr"><span class="card-title">Planning databases</span><span class="bdg bdg-p">Early intelligence</span></div>
-        <div class="src-row"><div><div style="font-weight:600">London Development Database</div><div style="font-size:11px;color:var(--text-secondary)">GLA major schemes</div></div><div style="display:flex;align-items:center;gap:6px"><div class="sd sd-g"></div><span style="font-size:11px">Active</span></div></div>
-        <div class="src-row"><div><div style="font-weight:600">Tower Hamlets · Southwark · Newham</div><div style="font-size:11px;color:var(--text-secondary)">Core London boroughs</div></div><div style="display:flex;align-items:center;gap:6px"><div class="sd sd-g"></div><span style="font-size:11px">Active</span></div></div>
-      </div>
-      <div class="card">
-        <div class="card-hdr"><span class="card-title">Industry news</span><span class="bdg bdg-s">Monitor</span></div>
-        <div class="src-row"><div><div style="font-weight:600">Construction Enquirer</div><div style="font-size:11px;color:var(--text-secondary)">constructionenquirer.com</div></div><div style="display:flex;align-items:center;gap:6px"><div class="sd sd-g"></div><span style="font-size:11px">Active</span></div></div>
-        <div class="src-row"><div><div style="font-weight:600">Building Magazine</div><div style="font-size:11px;color:var(--text-secondary)">building.co.uk</div></div><div style="display:flex;align-items:center;gap:6px"><div class="sd sd-g"></div><span style="font-size:11px">Active</span></div></div>
-        <div class="src-row"><div><div style="font-weight:600">LinkedIn contractor pages</div><div style="font-size:11px;color:var(--text-secondary)">Project wins + announcements</div></div><div style="display:flex;align-items:center;gap:6px"><div class="sd sd-a"></div><span style="font-size:11px;color:var(--warn-txt)">Manual</span></div></div>
-      </div>
-    </div>
   </div>
 
-  <!-- PLANNING -->
   <div id="m-planning" class="pg">
     <div class="info-bar">Planning approvals typically lead to brickwork packages 12–18 months later. Click any row to research the contractor and get Chine on the tender list early.</div>
     <div class="fullcard">
-      <div class="card-hdr"><span class="card-title">Flagged planning applications</span><span class="bdg bdg-p">14 tracked</span></div>
+      <div class="card-hdr"><span class="card-title">Flagged planning applications</span><span class="bdg bdg-p">Tracked</span></div>
       <div style="display:grid;grid-template-columns:100px 1fr 100px 85px;gap:10px;padding:8px 15px;background:var(--bg-secondary);font-size:11px;font-weight:600;color:var(--text-secondary)">
         <div>Ref</div><div>Development</div><div>Location</div><div>Stage</div>
       </div>
@@ -420,7 +361,6 @@
     </div>
   </div>
 
-  <!-- KEYWORDS -->
   <div id="m-keywords" class="pg">
     <div class="fullcard">
       <div class="card-hdr"><span class="card-title">Active search keywords</span><span class="bdg bdg-b">Click to toggle on/off</span></div>
@@ -443,28 +383,20 @@
     </div>
   </div>
 
-  <!-- ALERTS -->
   <div id="m-alerts" class="pg">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
-      <div class="card" style="padding:13px 15px"><div style="font-weight:600;margin-bottom:5px">Daily digest email</div><div style="font-size:12px;color:var(--text-secondary)">Every morning 07:30 — new leads sent to TC, SO, JS</div><div style="margin-top:9px"><span class="bdg bdg-g">Enabled</span></div></div>
       <div class="card" style="padding:13px 15px"><div style="font-weight:600;margin-bottom:5px">Hot lead instant alert</div><div style="font-size:12px;color:var(--text-secondary)">Immediate Teams notification on high-relevance match</div><div style="margin-top:9px"><span class="bdg bdg-g">Enabled</span></div></div>
       <div class="card" style="padding:13px 15px"><div style="font-weight:600;margin-bottom:5px">Weekly planning report</div><div style="font-size:12px;color:var(--text-secondary)">Friday summary of flagged planning applications</div><div style="margin-top:9px"><span class="bdg bdg-a">Setup needed</span></div></div>
-      <div class="card" style="padding:13px 15px"><div style="font-weight:600;margin-bottom:5px">Contractor news monitor</div><div style="font-size:12px;color:var(--text-secondary)">Alert when contractor announces new London scheme</div><div style="margin-top:9px"><span class="bdg bdg-a">Setup needed</span></div></div>
     </div>
     <div class="fullcard">
       <div class="card-hdr"><span class="card-title">Recent alerts</span></div>
       <div class="alert-item"><div class="alert-icon" style="background:var(--danger-bg);color:var(--danger-txt)">!</div><div><div style="font-weight:600;font-size:13px">Hot lead — Contracts Finder: Brickwork, Tower Hamlets, £2.1m</div><div style="font-size:12px;color:var(--text-secondary);margin-top:3px">Today 07:42 · Sent to TC, SO, JS · Deadline 14 April 2026</div></div></div>
       <div class="alert-item"><div class="alert-icon" style="background:var(--info-bg);color:var(--info-txt)">i</div><div><div style="font-weight:600;font-size:13px">Higgins announce contract win — Hackney regeneration scheme</div><div style="font-size:12px;color:var(--text-secondary);margin-top:3px">30/03/2026 · Contractor website scan · BW package expected Q3 2026</div></div></div>
-      <div class="alert-item"><div class="alert-icon" style="background:#e1f5ee;color:#085041">P</div><div><div style="font-weight:600;font-size:13px">Planning approval — 280 units, Newham, masonry construction</div><div style="font-size:12px;color:var(--text-secondary);margin-top:3px">28/03/2026 · Newham planning portal · Contractor appointment late 2026</div></div></div>
-    </div>
-    <div class="qbtns">
-      <button class="btn" onclick="alert('Power Automate setup: See the technical specification document for the exact flow configuration.')">Set up Power Automate</button>
-      <button class="btn" onclick="alert('Teams webhook setup: See the technical specification document for configuration.')">Set up Teams alerts</button>
     </div>
   </div>
 </div>
 
-<!-- MODAL -->
+<!-- JOB DETAIL MODAL -->
 <div class="overlay" id="overlay" onclick="closeMod(event)">
   <div class="modal">
     <div class="modal-hdr">
@@ -477,79 +409,444 @@
       <ul class="tl" id="m-tl"></ul>
       <div class="slbl">Next action</div>
       <div class="nab" id="m-next"></div>
+      <!-- Add comm form -->
+      <div class="add-comm-box" id="add-comm-form" style="display:none">
+        <div class="slbl">Log a call / note / email</div>
+        <input type="hidden" id="comm-job-id">
+        <div class="form-grid" style="margin-bottom:10px">
+          <div class="form-row" style="margin:0"><label>Who</label><select id="comm-who"><option>TC</option><option>SO</option><option>JS</option><option>RL</option><option>DML</option></select></div>
+          <div class="form-row" style="margin:0"><label>Type</label><select id="comm-type"><option value="call">Call</option><option value="email">Email</option><option value="note">Note</option></select></div>
+        </div>
+        <div class="form-row"><label>Notes</label><textarea id="comm-text" placeholder="What happened? What was agreed?"></textarea></div>
+        <div style="display:flex;gap:8px;justify-content:flex-end">
+          <button class="btn" onclick="document.getElementById('add-comm-form').style.display='none'">Cancel</button>
+          <button class="btn btn-primary" onclick="saveComm()">Save</button>
+        </div>
+      </div>
+      <!-- Edit job form -->
+      <div class="add-comm-box" id="edit-form" style="display:none;margin-top:10px">
+        <div class="slbl">Update job details</div>
+        <input type="hidden" id="edit-job-id">
+        <div class="form-grid" style="margin-bottom:10px">
+          <div class="form-row" style="margin:0"><label>Next action date</label><input type="text" id="edit-next-date" placeholder="DD/MM/YYYY"></div>
+          <div class="form-row" style="margin:0"><label>Status</label><select id="edit-status"><option value="overdue">Overdue</option><option value="week">Due soon</option><option value="ok">On track</option></select></div>
+        </div>
+        <div class="form-row"><label>Next action</label><input type="text" id="edit-next-act"></div>
+        <div class="form-row"><label>Stage</label><select id="edit-stage"><option>Submitted</option><option>BOQ Submitted</option><option>Being Priced</option><option>PCSA</option><option>Secured</option><option>Returned Take-Off</option></select></div>
+        <div class="form-grid" style="margin-bottom:10px">
+          <div class="form-row" style="margin:0"><label>Owner</label><select id="edit-owner"><option>TC</option><option>SO</option><option>JS</option><option>RL</option><option>DML</option></select></div>
+          <div class="form-row" style="margin:0"><label>Contact</label><input type="text" id="edit-contact"></div>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end">
+          <button class="btn" onclick="document.getElementById('edit-form').style.display='none'">Cancel</button>
+          <button class="btn btn-primary" onclick="saveJobUpdate()">Save changes</button>
+        </div>
+      </div>
     </div>
     <div class="modal-footer">
+      <button class="btn" onclick="toggleCommForm()">+ Log call / note</button>
+      <button class="btn" onclick="toggleEditForm()">Edit details</button>
       <button class="btn btn-primary" id="m-email-btn">Draft chase email</button>
       <button class="btn" onclick="document.getElementById('overlay').classList.remove('on')">Close</button>
     </div>
   </div>
 </div>
 
+<!-- ADD JOB MODAL -->
+<div class="overlay" id="new-job-overlay" onclick="if(event.target===this)closeNewJob()">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div style="font-size:16px;font-weight:600">Add new job</div>
+      <button class="mclose" onclick="closeNewJob()">&#x2715;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-row"><label>CB Number (e.g. CB550)</label><input type="text" id="nj-id" placeholder="CB550"></div>
+        <div class="form-row"><label>Owner</label><select id="nj-owner"><option>TC</option><option>SO</option><option>JS</option><option>RL</option><option>DML</option></select></div>
+      </div>
+      <div class="form-row"><label>Contractor</label><input type="text" id="nj-con" placeholder="e.g. Lovell"></div>
+      <div class="form-row"><label>Project name</label><input type="text" id="nj-proj" placeholder="e.g. Westfield Road Phase 2"></div>
+      <div class="form-grid">
+        <div class="form-row"><label>Stage</label><select id="nj-stage"><option>Submitted</option><option>BOQ Submitted</option><option>Being Priced</option><option>PCSA</option><option>Secured</option><option>Returned Take-Off</option></select></div>
+        <div class="form-row"><label>Status</label><select id="nj-status"><option value="ok">On track</option><option value="week">Due soon</option><option value="overdue">Overdue</option></select></div>
+      </div>
+      <div class="form-grid">
+        <div class="form-row"><label>Next action date (DD/MM/YYYY)</label><input type="text" id="nj-date" placeholder="30/04/2026"></div>
+        <div class="form-row"><label>Contact</label><input type="text" id="nj-contact" placeholder="Name · email · phone"></div>
+      </div>
+      <div class="form-row"><label>Next action</label><input type="text" id="nj-act" placeholder="e.g. SO chase up"></div>
+      <div id="nj-err" style="color:var(--danger-txt);font-size:12px;margin-top:4px"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeNewJob()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveNewJob()">Add job</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOG CALL MODAL -->
+<div class="overlay" id="log-call-overlay" onclick="if(event.target===this)closeLogCall()">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-hdr">
+      <div style="font-size:16px;font-weight:600">Log a call / activity</div>
+      <button class="mclose" onclick="closeLogCall()">&#x2715;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-row"><label>CB Number</label><input type="text" id="lc-cb" placeholder="CB 376"></div>
+        <div class="form-row"><label>Owner</label><select id="lc-owner"><option>TC</option><option>SO</option><option>JS</option><option>RL</option><option>DML</option></select></div>
+      </div>
+      <div class="form-row"><label>Contractor</label><input type="text" id="lc-con" placeholder="e.g. Lovell"></div>
+      <div class="form-row"><label>Action taken</label><textarea id="lc-action" placeholder="What happened?"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeLogCall()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveLogCall()">Save</button>
+    </div>
+  </div>
+</div>
+
+</div><!-- end .app -->
+</div><!-- end #app -->
+
 <script>
-// ── UTILITIES ──────────────────────────────────────────────────────────────
-const OC={TC:"#E6F1FB",SO:"#E1F5EE",JS:"#FAEEDA",RL:"#FBEAF0",DML:"#F1EFE8"};
-const OT={TC:"#0C447C",SO:"#085041",JS:"#633806",RL:"#72243E",DML:"#444441"};
-const SP={"Submitted":"ps","BOQ Submitted":"pb","Being Priced":"pp","PCSA":"pg2","Secured":"pg2","Returned Take-Off":"pp"};
-const SC={overdue:["pr","Overdue"],week:["pb","Due soon"],ok:["pp","On track"]};
-const TC2={call:"#378add",email:"#1D9E75",note:"#888780"};
-const TLbl={call:"Call",email:"Email",note:"Note"};
-const pillCss={ps:"background:var(--info-bg);color:var(--info-txt)",pb:"background:var(--warn-bg);color:var(--warn-txt)",pp:"background:var(--bg-secondary);color:var(--text-secondary)",pg2:"background:var(--success-bg);color:var(--success-txt)",pr:"background:var(--danger-bg);color:var(--danger-txt)"};
+const SUPABASE_URL = 'https://tfavnmgmhdpijnbmxexr.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRmYXZubWdtaGRwaWpuYm14ZXhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDEzNjksImV4cCI6MjA5MTMxNzM2OX0.6yCK42RWKUYbubALri7D7eEmU9k4xlipoHrlNk4ZtWU';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let jobs=[], leads=[], logEntries=[], futOpps=[], plans=[];
+
+// ── SEED DATA ────────────────────────────────────────────────────────────────
+const SEED_JOBS=[
+  {id:'CB376',cb:'CB 376',con:'Ermine',proj:'Naked House',stage:'Returned Take-Off',owner:'SO',next_date:'01/04/2026',next_act:'SO try calling again',status:'week',contact:''},
+  {id:'CB381',cb:'CB 381',con:'Higgins',proj:'Avonmore School',stage:'BOQ Submitted',owner:'SO',next_date:'30/05/2026',next_act:'SO chase up',status:'ok',contact:'Higgins Procurement Team'},
+  {id:'CB385',cb:'CB 385',con:'Higgins',proj:'Ladywell Park Gardens',stage:'BOQ Submitted',owner:'SO',next_date:'14/06/2026',next_act:'SO chase up',status:'ok',contact:'Higgins Commercial'},
+  {id:'CB411',cb:'CB 411',con:'Higgins',proj:'Bloomsbury House',stage:'PCSA',owner:'SO',next_date:'30/08/2026',next_act:'SO chase up',status:'ok',contact:'Michael Reardon (Senior PM) · Martyn Chandler (Commercial Manager)'},
+  {id:'CB413',cb:'CB 413',con:'MYC',proj:'Sunbury Hub',stage:'Returned Take-Off',owner:'SO',next_date:'01/04/2026',next_act:'SO try calling again',status:'week',contact:''},
+  {id:'CB415',cb:'CB 415',con:'Arte',proj:'Warwick & Christchurch',stage:'BOQ Submitted',owner:'SO',next_date:'25/04/2026',next_act:'SO chase up',status:'ok',contact:'Arte Commercial Team'},
+  {id:'CB417',cb:'CB 417',con:'Hill',proj:'Upton & Raynham',stage:'BOQ Submitted',owner:'SO',next_date:'25/04/2026',next_act:'SO chase up',status:'ok',contact:'Pat Riordan · patriordan@hill.co.uk · 07591 341974'},
+  {id:'CB454',cb:'CB 454',con:'McAleer & Rushe',proj:'Brent Cross Town',stage:'Submitted',owner:'RL',next_date:'01/04/2026',next_act:'SO try calling again',status:'overdue',contact:'Tiernan McVey · tiernan.mcvey@mcaleer-rushe.co.uk'},
+  {id:'CB461',cb:'CB 461',con:'Morgan Sindall',proj:'DFE School',stage:'Returned Take-Off',owner:'DML',next_date:'07/04/2026',next_act:'SO try calling again',status:'week',contact:''},
+  {id:'CB492',cb:'CB 492',con:'Forum',proj:'Emerson Park Academy',stage:'Submitted',owner:'DML',next_date:'06/04/2026',next_act:'SO chase up',status:'week',contact:'Forum Commercial'},
+  {id:'CB512',cb:'CB 512',con:'McAleer & Rushe',proj:'Sandringham Mews',stage:'BOQ Submitted',owner:'DML',next_date:'01/04/2026',next_act:'SO chase up',status:'week',contact:'Simon Cyprien – McAleer & Rushe'},
+  {id:'CB513',cb:'CB 513',con:'Boom',proj:'RSPB Visitor Centre',stage:'BOQ Submitted',owner:'RL',next_date:'25/04/2026',next_act:'SO chase up',status:'ok',contact:'Boom Commercial Team'},
+  {id:'CB514',cb:'CB 514',con:'DE Group',proj:'Great Newport Street',stage:'BOQ Submitted',owner:'DML',next_date:'25/04/2026',next_act:'SO chase up + arrange meeting',status:'ok',contact:'DE Group Commercial'},
+  {id:'CB518',cb:'CB 518',con:'Ellmer',proj:'Waterloo Hub Hotel',stage:'BOQ Submitted',owner:'DML',next_date:'01/04/2026',next_act:'Arrange intro meeting',status:'week',contact:'Ellmer Commercial'},
+  {id:'CB519',cb:'CB 519',con:'Arada',proj:'100 Avenue Road',stage:'Submitted',owner:'DML',next_date:'01/04/2026',next_act:'SO chase up',status:'week',contact:'Arada Commercial'},
+  {id:'CB523',cb:'CB 523',con:'Elkins',proj:'Midfield Primary School',stage:'BOQ Submitted',owner:'DML',next_date:'01/04/2026',next_act:'Arrange intro meeting - Billy Mould',status:'week',contact:'Billy Mould · billy.mould@elkinsconstruction.co.uk'},
+  {id:'CB526',cb:'CB 526',con:'Nicholas Stephens',proj:'Pentonville & Kings Cross Rd',stage:'BOQ Submitted',owner:'RL',next_date:'08/04/2026',next_act:'SO chase up',status:'week',contact:'Nicholas Stephens Commercial'},
+  {id:'CB528',cb:'CB 528',con:'Lovell',proj:'Former London Chest Hospital',stage:'BOQ Submitted',owner:'RL',next_date:'25/05/2026',next_act:'SO chase up',status:'ok',contact:'Lovell Commercial'},
+  {id:'CB534',cb:'CB 534',con:'Lovell',proj:'Blenheim Centre',stage:'BOQ Submitted',owner:'RL',next_date:'25/04/2026',next_act:'SO chase up',status:'overdue',contact:'Ruby Doyle · Ruby.Doyle@lovell.co.uk'},
+  {id:'CB535',cb:'CB 535',con:'WH',proj:'Abbey Quay Ph3',stage:'Submitted',owner:'DML',next_date:'02/04/2026',next_act:'SO resubmit with new info',status:'week',contact:'WH Commercial'},
+  {id:'CB537',cb:'CB 537',con:'Lovell',proj:'Regina Road',stage:'BOQ Submitted',owner:'RL',next_date:'25/09/2026',next_act:'SO chase up',status:'overdue',contact:'Jagraaj Singh Takhar · Jagraaj.SinghTakhar@lovell.co.uk'},
+  {id:'CB539',cb:'CB 539',con:'Lovell',proj:'Morris Walk South 5B2',stage:'Being Priced',owner:'DML',next_date:'02/06/2026',next_act:'SO chase up',status:'ok',contact:'Lovell Commercial'},
+  {id:'CB543',cb:'CB 543',con:'Kier',proj:"St Clere's Secondary School",stage:'PCSA',owner:'RL',next_date:'25/07/2026',next_act:'SO chase up',status:'ok',contact:'Kier Commercial Team'},
+  {id:'CB548',cb:'CB 548',con:'BDB Design Build',proj:'Enfield A10 Project',stage:'BOQ Submitted',owner:'DML',next_date:'08/04/2026',next_act:'SO chase up',status:'week',contact:'BDB Commercial'},
+  {id:'CB504',cb:'CB 504',con:'Lovell',proj:'West Kentish Town Ph1',stage:'BOQ Submitted',owner:'JS',next_date:'27/03/2026',next_act:'JS/TC follow up Ruby Doyle',status:'overdue',contact:'Ruby Doyle · Ruby.Doyle@lovell.co.uk'},
+  {id:'CB332',cb:'CB 332',con:'Hill',proj:'Cyprus',stage:'Secured',owner:'TC',next_date:'19/03/2026',next_act:'TC follow up Ross McKenna',status:'overdue',contact:'Ross McKenna · RossMckenna@hill.co.uk · 07761 513 694'},
+  {id:'CB340',cb:'CB 340',con:'Hill',proj:'Pier Road (Gateway)',stage:'Secured',owner:'TC',next_date:'19/03/2026',next_act:'TC follow up Scott Lovett',status:'overdue',contact:'Scott Lovett · ScottLovett@Hill.co.uk'},
+  {id:'CB429',cb:'CB 429',con:'Hill',proj:'Mayfield',stage:'BOQ Submitted',owner:'TC',next_date:'23/03/2026',next_act:'TC follow up BOQ to be priced',status:'overdue',contact:'Patrick Vullo · patrickvullo@hill.co.uk'},
+  {id:'CB451',cb:'CB 451',con:'Hill',proj:'Clare House',stage:'BOQ Submitted',owner:'TC',next_date:'26/03/2026',next_act:'TC follow up with Pat Riordan',status:'overdue',contact:'Pat Riordan · Patriordan@hill.co.uk · 07591 341974'},
+  {id:'CB471',cb:'CB 471',con:'Hill',proj:'Joyce & Snells',stage:'BOQ Submitted',owner:'TC',next_date:'26/03/2026',next_act:'TC follow up with Arseniyal',status:'overdue',contact:'Arseniyal Aleksandrovs · arseniyaleksandrovs@hill.co.uk'},
+  {id:'CB488',cb:'CB 488',con:'Hill',proj:'Douglas Bader Ph2',stage:'Submitted',owner:'TC',next_date:'26/03/2026',next_act:'TC follow up Jonathan Wright',status:'overdue',contact:'Jonathan Wright · JonathanWright@hill.co.uk'},
+];
+const SEED_COMMS=[
+  {job_id:'CB376',d:'25/03/2026',who:'SO',type:'call',text:'Called, no answer. Sent email, awaiting reply.'},
+  {job_id:'CB381',d:'25/03/2026',who:'SO',type:'call',text:'Called. They are in contract now and are hoping to run procurement over the next couple of months.'},
+  {job_id:'CB385',d:'25/03/2026',who:'SO',type:'call',text:'Called. Start date on site 5 May 2026. Brickwork package out early June, commencing September.'},
+  {job_id:'CB411',d:'25/03/2026',who:'SO',type:'call',text:'Called. PCSA stage secured. Contacts: Michael Reardon & Martyn Chandler at Higgins. 2-stage tender, PCSA approx 6 months.'},
+  {job_id:'CB413',d:'25/03/2026',who:'SO',type:'call',text:'Called, no answer. Sent email, awaiting reply.'},
+  {job_id:'CB415',d:'25/03/2026',who:'SO',type:'call',text:'Called. They are chasing and are hopeful.'},
+  {job_id:'CB417',d:'25/03/2026',who:'SO',type:'call',text:'Called. Drawings being updated, out in 2-3 weeks. Brickwork starting end of year.'},
+  {job_id:'CB454',d:'25/03/2026',who:'SO',type:'call',text:'Called, no answer. Sent email.'},
+  {job_id:'CB454',d:'17/03/2026',who:'TC',type:'email',text:'Emailed to follow up on project status.'},
+  {job_id:'CB454',d:'10/11/2025',who:'TC',type:'note',text:'Cameron Watson confirmed project awarded to MAR. Led by Tiernan McVey and Michael McCallion.'},
+  {job_id:'CB461',d:'31/03/2026',who:'SO',type:'call',text:'Called, no answer. Sent email, awaiting reply.'},
+  {job_id:'CB492',d:'23/03/2026',who:'SO',type:'note',text:'Resubmitted.'},
+  {job_id:'CB512',d:'25/02/2026',who:'SO',type:'note',text:'Resubmitted.'},
+  {job_id:'CB513',d:'25/03/2026',who:'SO',type:'call',text:'Called. Chasing for final decision.'},
+  {job_id:'CB514',d:'25/03/2026',who:'SO',type:'call',text:'Called. Preferred contractor. Scott requested meeting. Jobs coming up at Piccadilly and Mayfair.'},
+  {job_id:'CB518',d:'25/03/2026',who:'SO',type:'call',text:'Called and requested meeting. Responding to post tender queries from client. Need available dates for next 2-3 weeks.'},
+  {job_id:'CB519',d:'17/03/2026',who:'SO',type:'note',text:'Resubmitted.'},
+  {job_id:'CB523',d:'25/03/2026',who:'SO',type:'call',text:'Called. Project secured. Billy Mould is the contact. Welcome to visit.'},
+  {job_id:'CB526',d:'25/03/2026',who:'SO',type:'call',text:'Called and chased via email.'},
+  {job_id:'CB528',d:'25/03/2026',who:'SO',type:'call',text:"Called. Won't hear back for a couple of months."},
+  {job_id:'CB534',d:'25/03/2026',who:'SO',type:'call',text:'Called. Expect to hear back mid April.'},
+  {job_id:'CB534',d:'25/03/2026',who:'SO',type:'email',text:'Chased Ruby Doyle following formal price submission 02/02/2026.'},
+  {job_id:'CB535',d:'24/03/2026',who:'SO',type:'note',text:'Resubmitted and had post tender meeting.'},
+  {job_id:'CB537',d:'25/03/2026',who:'SO',type:'call',text:'Called. Matt advised contract signing this week, brickwork later this year, piling starts September.'},
+  {job_id:'CB537',d:'16/01/2026',who:'TC',type:'note',text:'Tender issued for PCSA Open Book Market Testing exercise. Deadline 23/01/2026.'},
+  {job_id:'CB539',d:'02/03/2026',who:'SO',type:'note',text:'Submitted.'},
+  {job_id:'CB543',d:'25/03/2026',who:'SO',type:'note',text:'Kier successful with tender. PCSA starts now. Planning submission end June 2026. Start on site Jan/Feb 2027.'},
+  {job_id:'CB548',d:'25/03/2026',who:'SO',type:'call',text:'Called. In the ballpark, still working on it.'},
+  {job_id:'CB504',d:'25/03/2026',who:'JS',type:'email',text:'Chased Ruby Doyle for scheme update. No reply yet.'},
+  {job_id:'CB332',d:'12/03/2026',who:'TC',type:'call',text:'Spoke to Nick Arnold — job won, handed to QS Ross McKenna. Left voicemail and sent email.'},
+  {job_id:'CB340',d:'12/03/2026',who:'TC',type:'call',text:'Matt Hibbitt confirmed Scott Lovett is now QS on project.'},
+  {job_id:'CB340',d:'12/03/2026',who:'TC',type:'email',text:'Followed up with email to Scott Lovett.'},
+  {job_id:'CB429',d:'17/03/2026',who:'TC',type:'call',text:'Spoke to Patrick — bill going out 17/03/2026.'},
+  {job_id:'CB429',d:'12/03/2026',who:'TC',type:'call',text:'Called Patrick Vullo, left voicemail and sent email.'},
+  {job_id:'CB451',d:'17/03/2026',who:'TC',type:'email',text:'Emailed Pat to find out if the project has been secured.'},
+  {job_id:'CB471',d:'17/03/2026',who:'TC',type:'email',text:'Amy Barnett confirmed Arseniyal is QS. TC emailed to find out when brickwork is issued for tender.'},
+  {job_id:'CB488',d:'17/03/2026',who:'TC',type:'call',text:'Called Jonathan, no answer. Followed up with email.'},
+];
+const SEED_LOG=[
+  {entry_date:'25/03',cb:'CB 376',contractor:'Ermine',action:'Called, no answer. Sent email',owner:'SO'},
+  {entry_date:'25/03',cb:'CB 454',contractor:'McAleer & Rushe',action:'Called, no answer. Sent email',owner:'SO'},
+  {entry_date:'31/03',cb:'CB 461',contractor:'Morgan Sindall',action:'Called, no answer. Sent email',owner:'SO'},
+  {entry_date:'25/02',cb:'CB 512',contractor:'McAleer & Rushe',action:'Resubmitted',owner:'SO'},
+  {entry_date:'24/03',cb:'CB 535',contractor:'WH',action:'Resubmitted + post tender meeting',owner:'SO'},
+  {entry_date:'25/03',cb:'CB 518',contractor:'Ellmer',action:'Called, requested meeting',owner:'SO'},
+  {entry_date:'25/03',cb:'CB 523',contractor:'Elkins',action:'Called — project secured, Billy Mould contact',owner:'SO'},
+  {entry_date:'25/03',cb:'CB 534',contractor:'Lovell',action:'Called — expect to hear back mid April',owner:'SO'},
+  {entry_date:'25/03',cb:'CB 537',contractor:'Lovell',action:'Called — contract signing, BW later this year',owner:'SO'},
+  {entry_date:'12/03',cb:'CB 332',contractor:'Hill',action:'Spoke to Nick Arnold — job won, Ross McKenna is QS',owner:'TC'},
+  {entry_date:'12/03',cb:'CB 340',contractor:'Hill',action:'Called Matt Hibbitt — Scott Lovett now QS',owner:'TC'},
+  {entry_date:'17/03',cb:'CB 429',contractor:'Hill',action:'Spoke to Patrick Vullo — bill going out',owner:'TC'},
+  {entry_date:'17/03',cb:'CB 488',contractor:'Hill',action:'Called Jonathan Wright, sent email',owner:'TC'},
+  {entry_date:'25/03',cb:'CB 504',contractor:'Lovell',action:'JS chased Ruby Doyle for scheme update',owner:'JS'},
+  {entry_date:'25/03',cb:'CB 381',contractor:'Higgins',action:'Called — in contract, procurement next couple months',owner:'SO'},
+  {entry_date:'25/03',cb:'CB 385',contractor:'Higgins',action:'Called — start 5 May, BW out June',owner:'SO'},
+  {entry_date:'25/03',cb:'CB 411',contractor:'Higgins',action:'Called — PCSA secured, contacts noted',owner:'SO'},
+  {entry_date:'25/03',cb:'CB 415',contractor:'Arte',action:'Called — chasing and hopeful',owner:'SO'},
+  {entry_date:'25/03',cb:'CB 417',contractor:'Hill',action:'Called — drawings updating, BW end of year',owner:'SO'},
+  {entry_date:'25/03',cb:'CB 513',contractor:'Boom',action:'Called — chasing final decision',owner:'SO'},
+  {entry_date:'25/03',cb:'CB 514',contractor:'DE Group',action:'Called — preferred contractor, meeting requested',owner:'SO'},
+];
+const SEED_OPPS=[
+  {contractor:'London Square',timing:'Imminent',projects:[{name:'Woolwich',detail:'Xavier Kelsall – Commercial Manager',action:'01/04/2026: TC follow up re supply chain',timing:'Imminent'},{name:'Ransomes Wharf',detail:'Robert Dewey – BW tender Aug/Sept 2026',action:'01/07/2026: Engage ahead of tender',timing:'Mid 2026'},{name:'Blackheath Leegate',detail:'Conor Jones – Commercial Manager',action:'Engage when tender due',timing:'Mid 2026'}]},
+  {contractor:'Mount Anvil',timing:'Imminent',projects:[{name:'New Barnsbury – Barnsbury Estate',detail:'Janice Valenzuela – tender due April 2026',action:'07/04/2026: Follow up on tender issue',timing:'Imminent'}]},
+  {contractor:'St William / St James',timing:'Imminent',projects:[{name:'Stratford Gasworks',detail:'Nick Wheldrake – TENDER RECEIVED March 2026',action:'Price and submit now',timing:'Imminent'},{name:'Bow Green',detail:'Marvin Manyepa – TENDER RECEIVED March 2026',action:'Price and submit now',timing:'Imminent'},{name:'Kings Road Park',detail:'Tom Davis – chased 17/03/2026',action:'Chase up',timing:'Mid 2026'}]},
+  {contractor:'Lovell',timing:'Imminent',projects:[{name:'Royston Road',detail:'Mehmet Hassan – tender pack due imminently',action:'01/04/2026: JS look out for tender pack',timing:'Imminent'},{name:'Hawksley Bungalows',detail:'Diven Halai – check back mid-2026',action:'26/06/2026: Chase',timing:'Mid 2026'}]},
+  {contractor:'Bouygues',timing:'Mid 2026',projects:[{name:'Tustin Park',detail:'Sarah Mills – contact May 2026',action:'25/05/2026: Chase up',timing:'Mid 2026'}]},
+  {contractor:'HG Construction',timing:'TBC',projects:[{name:'Bank House, Milton Keynes',detail:'Future pipeline',action:'Monitor',timing:'TBC'},{name:'Bollo Lane Ph2',detail:'Future pipeline',action:'Monitor',timing:'TBC'},{name:'N16 – East Village',detail:'Future pipeline',action:'Monitor',timing:'TBC'}]},
+  {contractor:'Tide Construction',timing:'TBC',projects:[{name:'Greenford Green Block 7',detail:'Awaiting tender',action:'Monitor',timing:'TBC'}]},
+  {contractor:'Vistry East London',timing:'TBC',projects:[{name:'Harriott, Apsley & Pattison Houses',detail:'Awaiting tender',action:'Monitor',timing:'TBC'}]},
+];
+const SEED_LEADS=[
+  {title:'Brickwork & masonry subcontract — residential, Tower Hamlets',src:'Contracts Finder',val:'£2.1m',loc:'Tower Hamlets',deadline:'14/04/2026',hot:true,description:'New build residential scheme, 145 units. External facing brickwork and blockwork. Higgins Partnerships main contractor. Pre-qualification closes 7 April.',url:'https://www.contractsfinder.service.gov.uk'},
+  {title:'Masonry subcontract — social housing regeneration, Southwark',src:'Find a Tender',val:'£890k',loc:'Southwark',deadline:'10/04/2026',hot:true,description:'Masonry works to 3 residential blocks. Lovell as framework contractor. Brick and block throughout.',url:'https://www.find-tender.service.gov.uk'},
+  {title:'Higgins announce contract win — Hackney regeneration, 200 units',src:'Contractor websites',val:'TBC',loc:'Hackney',deadline:'BW Q3 2026',hot:true,description:'Higgins Partnerships awarded main contract. Brickwork package expected Q3 2026. Chine already on Higgins supply chain.',url:'https://www.higginspartnerships.co.uk'},
+  {title:'Brickwork package — affordable housing, Barking',src:'Contracts Finder',val:'£1.3m',loc:'Barking',deadline:'22/04/2026',hot:false,description:'External brickwork to 5-storey residential scheme, 92 affordable homes.',url:'https://www.contractsfinder.service.gov.uk'},
+  {title:'Masonry works — school extension, North London',src:'Find a Tender',val:'£430k',loc:'Enfield',deadline:'18/04/2026',hot:false,description:'Brick and block throughout. Main contractor Kier. Tender documentation available now.',url:'https://www.find-tender.service.gov.uk'},
+  {title:'Planning approval — 320 units, mixed use, Newham',src:'Planning portal',val:'TBC',loc:'Newham',deadline:'Appoint. late 2026',hot:false,description:'Major mixed-use scheme approved. Masonry construction. Main contractor not yet appointed. Monitor for tender.',url:'https://www.newham.gov.uk/planning'},
+  {title:'Vistry announce new scheme — 180 units, Greenwich',src:'Construction news',val:'TBC',loc:'Greenwich',deadline:'TBC',hot:false,description:'Vistry Group announce new partnership scheme. Engage with commercial team to get on tender list.',url:'https://www.constructionenquirer.com'},
+];
+const SEED_PLANS=[
+  {ref:'PA/2026/0234',description:'320 units mixed use',borough:'Newham',status:'Approved'},
+  {ref:'2026/0187/FUL',description:'185 residential',borough:'Tower Hamlets',status:'Approved'},
+  {ref:'26/AP/0341',description:'240 units regen',borough:'Southwark',status:'Pending'},
+  {ref:'2026/1023',description:'95 unit care home',borough:'Hackney',status:'Approved'},
+  {ref:'PA/2026/0412',description:'150 units + retail',borough:'Barking',status:'Pending'},
+  {ref:'2026/0298/FUL',description:'75 affordable homes',borough:'Lewisham',status:'Approved'},
+];
+
+// ── AUTH ─────────────────────────────────────────────────────────────────────
+async function init(){
+  const {data:{session}} = await sb.auth.getSession();
+  if(session){ showApp(session.user); await loadData(); setupRealtime(); }
+  else { showLogin(); }
+}
+function showLogin(){
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('app').style.display='none';
+}
+function showApp(user){
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.getElementById('today-date').textContent=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+  if(user) document.getElementById('user-badge').textContent=user.email.split('@')[0];
+}
+async function doLogin(){
+  const email=document.getElementById('li-email').value;
+  const pass=document.getElementById('li-pass').value;
+  document.getElementById('li-err').textContent='';
+  const {data,error}=await sb.auth.signInWithPassword({email,password:pass});
+  if(error){document.getElementById('li-err').textContent=error.message;}
+  else{showApp(data.user);await loadData();setupRealtime();}
+}
+async function doLogout(){
+  await sb.auth.signOut();
+  showLogin();
+}
+
+// ── DATA ─────────────────────────────────────────────────────────────────────
+async function loadData(){
+  const {data:ej}=await sb.from('jobs').select('id').limit(1);
+  if(!ej||!ej.length) await seedDatabase();
+
+  const [jr,cr,lr,logr,for_,fpr,pr]=await Promise.all([
+    sb.from('jobs').select('*').order('id'),
+    sb.from('comms').select('*').order('created_at'),
+    sb.from('leads').select('*').order('id'),
+    sb.from('log_entries').select('*').order('created_at',{ascending:false}),
+    sb.from('future_opps').select('*').order('contractor'),
+    sb.from('future_opp_projects').select('*'),
+    sb.from('plans').select('*'),
+  ]);
+
+  jobs=(jr.data||[]).map(j=>({
+    id:j.id,cb:j.cb,con:j.con,proj:j.proj,stage:j.stage,owner:j.owner,
+    nextDate:j.next_date,nextAct:j.next_act,status:j.status,contact:j.contact,
+    comms:(cr.data||[]).filter(c=>c.job_id===j.id).map(c=>({d:c.d,who:c.who,type:c.type,text:c.text}))
+  }));
+  leads=(lr.data||[]).map(l=>({id:l.id,title:l.title,src:l.src,val:l.val,loc:l.loc,deadline:l.deadline,hot:l.hot,desc:l.description,url:l.url}));
+  logEntries=(logr.data||[]).map(l=>[l.entry_date,l.cb,l.contractor,l.action,l.owner]);
+  futOpps=(for_.data||[]).map(o=>({id:o.id,contractor:o.contractor,timing:o.timing,projects:(fpr.data||[]).filter(p=>p.opp_id===o.id).map(p=>({name:p.name,detail:p.detail,action:p.action,timing:p.timing}))}));
+  plans=(pr.data||[]).map(p=>{const c=p.status==='Approved'?['#eaf3de','#27500a']:['#fef9e7','#b7770d'];return[p.ref,p.description,p.borough,p.status,c[0],c[1]];});
+
+  updateMetrics();
+  renderOverview();
+  renderPipeline(jobs);
+  renderFeed(leads);
+}
+
+async function seedDatabase(){
+  await sb.from('jobs').insert(SEED_JOBS);
+  await sb.from('comms').insert(SEED_COMMS);
+  await sb.from('log_entries').insert(SEED_LOG);
+  const {data:opps}=await sb.from('future_opps').insert(SEED_OPPS.map(o=>({contractor:o.contractor,timing:o.timing}))).select();
+  if(opps){
+    const projs=[];
+    SEED_OPPS.forEach((o,i)=>{if(opps[i])o.projects.forEach(p=>projs.push({opp_id:opps[i].id,name:p.name,detail:p.detail,action:p.action,timing:p.timing}));});
+    if(projs.length)await sb.from('future_opp_projects').insert(projs);
+  }
+  await sb.from('leads').insert(SEED_LEADS.map(l=>({title:l.title,src:l.src,val:l.val,loc:l.loc,deadline:l.deadline,hot:l.hot,description:l.description,url:l.url})));
+  await sb.from('plans').insert(SEED_PLANS);
+}
+
+function setupRealtime(){
+  sb.channel('db').on('postgres_changes',{event:'*',schema:'public',table:'jobs'},loadData)
+    .on('postgres_changes',{event:'*',schema:'public',table:'comms'},loadData)
+    .on('postgres_changes',{event:'*',schema:'public',table:'log_entries'},loadData)
+    .subscribe();
+}
+
+function updateMetrics(){
+  const ov=jobs.filter(j=>j.status==='overdue').length;
+  const wk=jobs.filter(j=>j.status==='week').length;
+  const futTotal=futOpps.reduce((a,o)=>a+o.projects.length,0);
+  const futImm=futOpps.reduce((a,o)=>a+o.projects.filter(p=>p.timing==='Imminent').length,0);
+  document.getElementById('cnt-overdue').textContent=ov;
+  document.getElementById('cnt-week').textContent=wk;
+  document.getElementById('cnt-active').textContent=jobs.length;
+  document.getElementById('cnt-secured').textContent=jobs.filter(j=>j.stage==='Secured').length;
+  document.getElementById('cnt-future').textContent=futTotal;
+  document.getElementById('crm-badge').textContent=ov;
+  document.getElementById('mkt-badge').textContent=leads.length;
+  document.getElementById('mkt-badge2').textContent=leads.length;
+  document.getElementById('leads-today').textContent=leads.length;
+  document.getElementById('leads-hot').textContent=leads.filter(l=>l.hot).length;
+  document.getElementById('badge-overdue').textContent=ov+' overdue';
+  document.getElementById('badge-week').textContent=wk+' due';
+  document.getElementById('cnt-fut-total').textContent=futTotal;
+  document.getElementById('cnt-fut-imminent').textContent=futImm;
+  document.getElementById('cnt-fut-contractors').textContent=futOpps.length;
+  document.getElementById('log-title').textContent='Call & activity log — '+logEntries.length+' entries';
+}
+
+// ── CRUD ─────────────────────────────────────────────────────────────────────
+async function saveComm(){
+  const jobId=document.getElementById('comm-job-id').value;
+  const who=document.getElementById('comm-who').value;
+  const type=document.getElementById('comm-type').value;
+  const text=document.getElementById('comm-text').value.trim();
+  if(!text)return;
+  const today=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'2-digit',year:'numeric'});
+  await sb.from('comms').insert({job_id:jobId,d:today,who,type,text});
+  const job=jobs.find(j=>j.id===jobId);
+  if(job) await sb.from('log_entries').insert({entry_date:today.slice(0,5),cb:job.cb,contractor:job.con,action:text,owner:who});
+  document.getElementById('comm-text').value='';
+  document.getElementById('add-comm-form').style.display='none';
+  await loadData();
+  openJob(jobId);
+}
+
+async function saveJobUpdate(){
+  const jobId=document.getElementById('edit-job-id').value;
+  await sb.from('jobs').update({
+    next_date:document.getElementById('edit-next-date').value,
+    next_act:document.getElementById('edit-next-act').value,
+    status:document.getElementById('edit-status').value,
+    stage:document.getElementById('edit-stage').value,
+    owner:document.getElementById('edit-owner').value,
+    contact:document.getElementById('edit-contact').value,
+  }).eq('id',jobId);
+  document.getElementById('edit-form').style.display='none';
+  await loadData();
+  openJob(jobId);
+}
+
+async function saveNewJob(){
+  const id=document.getElementById('nj-id').value.trim().replace(/\s/g,'').toUpperCase();
+  if(!id){document.getElementById('nj-err').textContent='CB number is required';return;}
+  const cb='CB '+id.replace(/^CB/,'');
+  const {error}=await sb.from('jobs').insert({
+    id,cb,
+    con:document.getElementById('nj-con').value,
+    proj:document.getElementById('nj-proj').value,
+    stage:document.getElementById('nj-stage').value,
+    owner:document.getElementById('nj-owner').value,
+    next_date:document.getElementById('nj-date').value,
+    next_act:document.getElementById('nj-act').value,
+    status:document.getElementById('nj-status').value,
+    contact:document.getElementById('nj-contact').value,
+  });
+  if(error){document.getElementById('nj-err').textContent=error.message;return;}
+  closeNewJob();
+  await loadData();
+}
+
+async function saveLogCall(){
+  const today=new Date().toLocaleDateString('en-GB').slice(0,5);
+  await sb.from('log_entries').insert({
+    entry_date:today,
+    cb:document.getElementById('lc-cb').value,
+    contractor:document.getElementById('lc-con').value,
+    action:document.getElementById('lc-action').value,
+    owner:document.getElementById('lc-owner').value,
+  });
+  closeLogCall();
+  await loadData();
+}
+
+function openNewJob(){document.getElementById('new-job-overlay').classList.add('on');}
+function closeNewJob(){document.getElementById('new-job-overlay').classList.remove('on');document.getElementById('nj-err').textContent='';}
+function openLogCall(){document.getElementById('log-call-overlay').classList.add('on');}
+function closeLogCall(){document.getElementById('log-call-overlay').classList.remove('on');}
+
+function toggleCommForm(){
+  const f=document.getElementById('add-comm-form');
+  f.style.display=f.style.display==='none'?'block':'none';
+  document.getElementById('edit-form').style.display='none';
+}
+function toggleEditForm(){
+  const f=document.getElementById('edit-form');
+  f.style.display=f.style.display==='none'?'block':'none';
+  document.getElementById('add-comm-form').style.display='none';
+}
+
+// ── UTILITIES ─────────────────────────────────────────────────────────────────
+const OC={TC:'#E6F1FB',SO:'#E1F5EE',JS:'#FAEEDA',RL:'#FBEAF0',DML:'#F1EFE8'};
+const OT={TC:'#0C447C',SO:'#085041',JS:'#633806',RL:'#72243E',DML:'#444441'};
+const SP={'Submitted':'ps','BOQ Submitted':'pb','Being Priced':'pp','PCSA':'pg2','Secured':'pg2','Returned Take-Off':'pp'};
+const SC={overdue:['pr','Overdue'],week:['pb','Due soon'],ok:['pp','On track']};
+const TC2={call:'#378add',email:'#1D9E75',note:'#888780'};
+const TLbl={call:'Call',email:'Email',note:'Note'};
+const pillCss={ps:'background:var(--info-bg);color:var(--info-txt)',pb:'background:var(--warn-bg);color:var(--warn-txt)',pp:'background:var(--bg-secondary);color:var(--text-secondary)',pg2:'background:var(--success-bg);color:var(--success-txt)',pr:'background:var(--danger-bg);color:var(--danger-txt)'};
+const tColor={'Imminent':'#1D9E75','Mid 2026':'#BA7517','Late 2026':'#534AB7','TBC':'#888780'};
+const tBg={'Imminent':'#E1F5EE','Mid 2026':'#FAEEDA','Late 2026':'#EEEDFE','TBC':'#F1EFE8'};
 function pill(cls,txt){return`<span class="pill" style="${pillCss[cls]||''}">${txt}</span>`;}
 function obadge(o){return`<span style="width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;background:${OC[o]||'#f5f5f5'};color:${OT[o]||'#333'}">${o}</span>`;}
 
-// Set today's date
-document.getElementById('today-date').textContent=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
-
-// ── JOB DATA ──────────────────────────────────────────────────────────────
-// TO ADD A JOB: copy one object below and add to this array
-// TO UPDATE: find the job by id and edit its fields
-// comms array: type = "call" | "email" | "note"
-const jobs=[
-  {id:"CB376",cb:"CB 376",con:"Ermine",proj:"Naked House",stage:"Returned Take-Off",owner:"SO",nextDate:"01/04/2026",nextAct:"SO try calling again",status:"week",contact:"",comms:[{d:"25/03/2026",who:"SO",type:"call",text:"Called, no answer. Sent email, awaiting reply."}]},
-  {id:"CB381",cb:"CB 381",con:"Higgins",proj:"Avonmore School",stage:"BOQ Submitted",owner:"SO",nextDate:"30/05/2026",nextAct:"SO chase up",status:"ok",contact:"Higgins Procurement Team",comms:[{d:"25/03/2026",who:"SO",type:"call",text:"Called. They are in contract now and are hoping to run procurement over the next couple of months."}]},
-  {id:"CB385",cb:"CB 385",con:"Higgins",proj:"Ladywell Park Gardens",stage:"BOQ Submitted",owner:"SO",nextDate:"14/06/2026",nextAct:"SO chase up",status:"ok",contact:"Higgins Commercial",comms:[{d:"25/03/2026",who:"SO",type:"call",text:"Called. Start date on site 5 May 2026. Brickwork package out early June, commencing September."}]},
-  {id:"CB411",cb:"CB 411",con:"Higgins",proj:"Bloomsbury House",stage:"PCSA",owner:"SO",nextDate:"30/08/2026",nextAct:"SO chase up",status:"ok",contact:"Michael Reardon (Senior PM) · Martyn Chandler (Commercial Manager)",comms:[{d:"25/03/2026",who:"SO",type:"call",text:"Called. PCSA stage secured. Contacts: Michael Reardon & Martyn Chandler at Higgins. 2-stage tender, PCSA approx 6 months."}]},
-  {id:"CB413",cb:"CB 413",con:"MYC",proj:"Sunbury Hub",stage:"Returned Take-Off",owner:"SO",nextDate:"01/04/2026",nextAct:"SO try calling again",status:"week",contact:"",comms:[{d:"25/03/2026",who:"SO",type:"call",text:"Called, no answer. Sent email, awaiting reply."}]},
-  {id:"CB415",cb:"CB 415",con:"Arte",proj:"Warwick & Christchurch",stage:"BOQ Submitted",owner:"SO",nextDate:"25/04/2026",nextAct:"SO chase up",status:"ok",contact:"Arte Commercial Team",comms:[{d:"25/03/2026",who:"SO",type:"call",text:"Called. They are chasing and are hopeful."}]},
-  {id:"CB417",cb:"CB 417",con:"Hill",proj:"Upton & Raynham",stage:"BOQ Submitted",owner:"SO",nextDate:"25/04/2026",nextAct:"SO chase up",status:"ok",contact:"Pat Riordan · patriordan@hill.co.uk · 07591 341974",comms:[{d:"25/03/2026",who:"SO",type:"call",text:"Called. Drawings being updated, out in 2-3 weeks. Brickwork starting end of year."}]},
-  {id:"CB454",cb:"CB 454",con:"McAleer & Rushe",proj:"Brent Cross Town",stage:"Submitted",owner:"RL",nextDate:"01/04/2026",nextAct:"SO try calling again",status:"overdue",contact:"Tiernan McVey · tiernan.mcvey@mcaleer-rushe.co.uk",comms:[{d:"25/03/2026",who:"SO",type:"call",text:"Called, no answer. Sent email."},{d:"17/03/2026",who:"TC",type:"email",text:"Emailed to follow up on project status."},{d:"10/11/2025",who:"TC",type:"note",text:"Cameron Watson confirmed project awarded to MAR. Led by Tiernan McVey and Michael McCallion."}]},
-  {id:"CB461",cb:"CB 461",con:"Morgan Sindall",proj:"DFE School",stage:"Returned Take-Off",owner:"DML",nextDate:"07/04/2026",nextAct:"SO try calling again",status:"week",contact:"",comms:[{d:"31/03/2026",who:"SO",type:"call",text:"Called, no answer. Sent email, awaiting reply."}]},
-  {id:"CB492",cb:"CB 492",con:"Forum",proj:"Emerson Park Academy",stage:"Submitted",owner:"DML",nextDate:"06/04/2026",nextAct:"SO chase up",status:"week",contact:"Forum Commercial",comms:[{d:"23/03/2026",who:"SO",type:"note",text:"Resubmitted."}]},
-  {id:"CB512",cb:"CB 512",con:"McAleer & Rushe",proj:"Sandringham Mews",stage:"BOQ Submitted",owner:"DML",nextDate:"01/04/2026",nextAct:"SO chase up",status:"week",contact:"Simon Cyprien – McAleer & Rushe",comms:[{d:"25/02/2026",who:"SO",type:"note",text:"Resubmitted."}]},
-  {id:"CB513",cb:"CB 513",con:"Boom",proj:"RSPB Visitor Centre",stage:"BOQ Submitted",owner:"RL",nextDate:"25/04/2026",nextAct:"SO chase up",status:"ok",contact:"Boom Commercial Team",comms:[{d:"25/03/2026",who:"SO",type:"call",text:"Called. Chasing for final decision."}]},
-  {id:"CB514",cb:"CB 514",con:"DE Group",proj:"Great Newport Street",stage:"BOQ Submitted",owner:"DML",nextDate:"25/04/2026",nextAct:"SO chase up + arrange meeting",status:"ok",contact:"DE Group Commercial",comms:[{d:"25/03/2026",who:"SO",type:"call",text:"Called. Preferred contractor. Scott requested meeting. Jobs coming up at Piccadilly and Mayfair."}]},
-  {id:"CB518",cb:"CB 518",con:"Ellmer",proj:"Waterloo Hub Hotel",stage:"BOQ Submitted",owner:"DML",nextDate:"01/04/2026",nextAct:"Arrange intro meeting",status:"week",contact:"Ellmer Commercial",comms:[{d:"25/03/2026",who:"SO",type:"call",text:"Called and requested meeting. Responding to post tender queries from client. Need available dates for next 2-3 weeks."}]},
-  {id:"CB519",cb:"CB 519",con:"Arada",proj:"100 Avenue Road",stage:"Submitted",owner:"DML",nextDate:"01/04/2026",nextAct:"SO chase up",status:"week",contact:"Arada Commercial",comms:[{d:"17/03/2026",who:"SO",type:"note",text:"Resubmitted."}]},
-  {id:"CB523",cb:"CB 523",con:"Elkins",proj:"Midfield Primary School",stage:"BOQ Submitted",owner:"DML",nextDate:"01/04/2026",nextAct:"Arrange intro meeting – Billy Mould",status:"week",contact:"Billy Mould · billy.mould@elkinsconstruction.co.uk",comms:[{d:"25/03/2026",who:"SO",type:"call",text:"Called. Project secured. Billy Mould is the contact. Welcome to visit."}]},
-  {id:"CB526",cb:"CB 526",con:"Nicholas Stephens",proj:"Pentonville & Kings Cross Rd",stage:"BOQ Submitted",owner:"RL",nextDate:"08/04/2026",nextAct:"SO chase up",status:"week",contact:"Nicholas Stephens Commercial",comms:[{d:"25/03/2026",who:"SO",type:"call",text:"Called and chased via email."}]},
-  {id:"CB528",cb:"CB 528",con:"Lovell",proj:"Former London Chest Hospital",stage:"BOQ Submitted",owner:"RL",nextDate:"25/05/2026",nextAct:"SO chase up",status:"ok",contact:"Lovell Commercial",comms:[{d:"25/03/2026",who:"SO",type:"call",text:"Called. Won't hear back for a couple of months."}]},
-  {id:"CB534",cb:"CB 534",con:"Lovell",proj:"Blenheim Centre",stage:"BOQ Submitted",owner:"RL",nextDate:"25/04/2026",nextAct:"SO chase up",status:"overdue",contact:"Ruby Doyle · Ruby.Doyle@lovell.co.uk",comms:[{d:"25/03/2026",who:"SO",type:"call",text:"Called. Expect to hear back mid April."},{d:"25/03/2026",who:"SO",type:"email",text:"Chased Ruby Doyle following formal price submission 02/02/2026."}]},
-  {id:"CB535",cb:"CB 535",con:"WH",proj:"Abbey Quay Ph3",stage:"Submitted",owner:"DML",nextDate:"02/04/2026",nextAct:"SO resubmit with new info",status:"week",contact:"WH Commercial",comms:[{d:"24/03/2026",who:"SO",type:"note",text:"Resubmitted and had post tender meeting."}]},
-  {id:"CB537",cb:"CB 537",con:"Lovell",proj:"Regina Road",stage:"BOQ Submitted",owner:"RL",nextDate:"25/09/2026",nextAct:"SO chase up",status:"overdue",contact:"Jagraaj Singh Takhar · Jagraaj.SinghTakhar@lovell.co.uk",comms:[{d:"25/03/2026",who:"SO",type:"call",text:"Called. Matt advised contract signing this week, brickwork later this year, piling starts September."},{d:"16/01/2026",who:"TC",type:"note",text:"Tender issued for PCSA Open Book Market Testing exercise. Deadline 23/01/2026."}]},
-  {id:"CB539",cb:"CB 539",con:"Lovell",proj:"Morris Walk South 5B2",stage:"Being Priced",owner:"DML",nextDate:"02/06/2026",nextAct:"SO chase up",status:"ok",contact:"Lovell Commercial",comms:[{d:"02/03/2026",who:"SO",type:"note",text:"Submitted."}]},
-  {id:"CB543",cb:"CB 543",con:"Kier",proj:"St Clere's Secondary School",stage:"PCSA",owner:"RL",nextDate:"25/07/2026",nextAct:"SO chase up",status:"ok",contact:"Kier Commercial Team",comms:[{d:"25/03/2026",who:"SO",type:"note",text:"Kier successful with tender. PCSA starts now. Planning submission end June 2026. Start on site Jan/Feb 2027."}]},
-  {id:"CB548",cb:"CB 548",con:"BDB Design Build",proj:"Enfield A10 Project",stage:"BOQ Submitted",owner:"DML",nextDate:"08/04/2026",nextAct:"SO chase up",status:"week",contact:"BDB Commercial",comms:[{d:"25/03/2026",who:"SO",type:"call",text:"Called. In the ballpark, still working on it."}]},
-  {id:"CB504",cb:"CB 504",con:"Lovell",proj:"West Kentish Town Ph1",stage:"BOQ Submitted",owner:"JS",nextDate:"27/03/2026",nextAct:"JS/TC follow up Ruby Doyle",status:"overdue",contact:"Ruby Doyle · Ruby.Doyle@lovell.co.uk",comms:[{d:"25/03/2026",who:"JS",type:"email",text:"Chased Ruby Doyle for scheme update. No reply yet."}]},
-  {id:"CB332",cb:"CB 332",con:"Hill",proj:"Cyprus",stage:"Secured",owner:"TC",nextDate:"19/03/2026",nextAct:"TC follow up Ross McKenna",status:"overdue",contact:"Ross McKenna · RossMckenna@hill.co.uk · 07761 513 694",comms:[{d:"12/03/2026",who:"TC",type:"call",text:"Spoke to Nick Arnold — job won, handed to QS Ross McKenna. Left voicemail and sent email."}]},
-  {id:"CB340",cb:"CB 340",con:"Hill",proj:"Pier Road (Gateway)",stage:"Secured",owner:"TC",nextDate:"19/03/2026",nextAct:"TC follow up Scott Lovett",status:"overdue",contact:"Scott Lovett · ScottLovett@Hill.co.uk",comms:[{d:"12/03/2026",who:"TC",type:"call",text:"Matt Hibbitt confirmed Scott Lovett is now QS on project."},{d:"12/03/2026",who:"TC",type:"email",text:"Followed up with email to Scott Lovett."}]},
-  {id:"CB429",cb:"CB 429",con:"Hill",proj:"Mayfield",stage:"BOQ Submitted",owner:"TC",nextDate:"23/03/2026",nextAct:"TC follow up BOQ to be priced",status:"overdue",contact:"Patrick Vullo · patrickvullo@hill.co.uk",comms:[{d:"17/03/2026",who:"TC",type:"call",text:"Spoke to Patrick — bill going out 17/03/2026."},{d:"12/03/2026",who:"TC",type:"call",text:"Called Patrick Vullo, left voicemail and sent email."}]},
-  {id:"CB451",cb:"CB 451",con:"Hill",proj:"Clare House",stage:"BOQ Submitted",owner:"TC",nextDate:"26/03/2026",nextAct:"TC follow up with Pat Riordan",status:"overdue",contact:"Pat Riordan · Patriordan@hill.co.uk · 07591 341974",comms:[{d:"17/03/2026",who:"TC",type:"email",text:"Emailed Pat to find out if the project has been secured."}]},
-  {id:"CB471",cb:"CB 471",con:"Hill",proj:"Joyce & Snells",stage:"BOQ Submitted",owner:"TC",nextDate:"26/03/2026",nextAct:"TC follow up with Arseniyal",status:"overdue",contact:"Arseniyal Aleksandrovs · arseniyaleksandrovs@hill.co.uk",comms:[{d:"17/03/2026",who:"TC",type:"email",text:"Amy Barnett confirmed Arseniyal is QS. TC emailed to find out when brickwork is issued for tender."}]},
-  {id:"CB488",cb:"CB 488",con:"Hill",proj:"Douglas Bader Ph2",stage:"Submitted",owner:"TC",nextDate:"26/03/2026",nextAct:"TC follow up Jonathan Wright",status:"overdue",contact:"Jonathan Wright · JonathanWright@hill.co.uk",comms:[{d:"17/03/2026",who:"TC",type:"call",text:"Called Jonathan, no answer. Followed up with email."}]},
-];
-
-// ── RENDER FUNCTIONS ────────────────────────────────────────────────────────
+// ── RENDER ────────────────────────────────────────────────────────────────────
 function renderOverview(){
   const ov=jobs.filter(j=>j.status==='overdue').slice(0,8);
   const wk=jobs.filter(j=>j.status==='week').slice(0,8);
-  const dotClass={overdue:'dr',week:'da',ok:'dg'};
-  const dateClass={overdue:'r',week:'a',ok:'b'};
-  const mkLi=j=>`<li class="ji" onclick="openJob('${j.id}')"><div class="dot ${dotClass[j.status]}"></div><div style="flex:1"><div class="jname">${j.cb} – ${j.proj} <span style="font-weight:400;color:var(--text-secondary)">· ${j.con}</span></div><div class="jdesc">${j.nextAct}</div></div><div class="jdate ${dateClass[j.status]}">${j.nextDate.slice(0,5)}</div></li>`;
+  const dc={overdue:'dr',week:'da',ok:'dg'};
+  const dtc={overdue:'r',week:'a',ok:'b'};
+  const mkLi=j=>`<li class="ji" onclick="openJob('${j.id}')"><div class="dot ${dc[j.status]}"></div><div style="flex:1"><div class="jname">${j.cb} – ${j.proj} <span style="font-weight:400;color:var(--text-secondary)">· ${j.con}</span></div><div class="jdesc">${j.nextAct}</div></div><div class="jdate ${dtc[j.status]}">${j.nextDate.slice(0,5)}</div></li>`;
   document.getElementById('ov-overdue').innerHTML=ov.map(mkLi).join('');
   document.getElementById('ov-week').innerHTML=wk.map(mkLi).join('');
-  document.getElementById('cnt-overdue').textContent=jobs.filter(j=>j.status==='overdue').length;
-  document.getElementById('cnt-week').textContent=jobs.filter(j=>j.status==='week').length;
-  document.getElementById('crm-badge').textContent=jobs.filter(j=>j.status==='overdue').length;
 }
 
 function renderPipeline(data){
@@ -561,6 +858,7 @@ function renderPipeline(data){
     <td>${pill(SC[j.status][0],SC[j.status][1])}</td>
   </tr>`).join('');
 }
+
 function filterPipe(){
   const s=document.getElementById('ps').value.toLowerCase();
   const st=document.getElementById('pst').value;
@@ -578,31 +876,6 @@ function renderActions(){
   </tr>`).join('');
 }
 
-// ── CALL LOG DATA ────────────────────────────────────────────────────────
-// TO ADD: push a new array [date, cb, contractor, action, owner] to this list
-const logEntries=[
-  ["25/03","CB 376","Ermine","Called, no answer. Sent email","SO"],
-  ["25/03","CB 454","McAleer & Rushe","Called, no answer. Sent email","SO"],
-  ["31/03","CB 461","Morgan Sindall","Called, no answer. Sent email","SO"],
-  ["25/02","CB 512","McAleer & Rushe","Resubmitted","SO"],
-  ["24/03","CB 535","WH","Resubmitted + post tender meeting","SO"],
-  ["25/03","CB 518","Ellmer","Called, requested meeting","SO"],
-  ["25/03","CB 523","Elkins","Called — project secured, Billy Mould contact","SO"],
-  ["25/03","CB 534","Lovell","Called — expect to hear back mid April","SO"],
-  ["25/03","CB 537","Lovell","Called — contract signing, BW later this year","SO"],
-  ["12/03","CB 332","Hill","Spoke to Nick Arnold — job won, Ross McKenna is QS","TC"],
-  ["12/03","CB 340","Hill","Called Matt Hibbitt — Scott Lovett now QS","TC"],
-  ["17/03","CB 429","Hill","Spoke to Patrick Vullo — bill going out","TC"],
-  ["17/03","CB 488","Hill","Called Jonathan Wright, sent email","TC"],
-  ["25/03","CB 504","Lovell","JS chased Ruby Doyle for scheme update","JS"],
-  ["25/03","CB 381","Higgins","Called — in contract, procurement next couple months","SO"],
-  ["25/03","CB 385","Higgins","Called — start 5 May, BW out June","SO"],
-  ["25/03","CB 411","Higgins","Called — PCSA secured, contacts noted","SO"],
-  ["25/03","CB 415","Arte","Called — chasing and hopeful","SO"],
-  ["25/03","CB 417","Hill","Called — drawings updating, BW end of year","SO"],
-  ["25/03","CB 513","Boom","Called — chasing final decision","SO"],
-  ["25/03","CB 514","DE Group","Called — preferred contractor, meeting requested","SO"],
-];
 function renderLog(){
   document.getElementById('log-body').innerHTML=logEntries.map((e,i)=>`
     <div class="log-row" style="background:${i%2===0?'var(--bg-secondary)':'var(--bg-primary)'}">
@@ -614,48 +887,45 @@ function renderLog(){
     </div>`).join('');
 }
 
-// ── FUTURE OPPS DATA ────────────────────────────────────────────────────────
-const timingColor={"Imminent":"#1D9E75","Mid 2026":"#BA7517","Late 2026":"#534AB7","TBC":"#888780"};
-const timingBg={"Imminent":"#E1F5EE","Mid 2026":"#FAEEDA","Late 2026":"#EEEDFE","TBC":"#F1EFE8"};
-const futOpps=[
-  {contractor:"London Square",timing:"Imminent",projects:[{name:"Woolwich",detail:"Xavier Kelsall – Commercial Manager",action:"01/04/2026: TC follow up re supply chain",timing:"Imminent"},{name:"Ransomes Wharf",detail:"Robert Dewey – BW tender Aug/Sept 2026",action:"01/07/2026: Engage ahead of tender",timing:"Mid 2026"},{name:"Blackheath Leegate",detail:"Conor Jones – Commercial Manager",action:"Engage when tender due",timing:"Mid 2026"}]},
-  {contractor:"Mount Anvil",timing:"Imminent",projects:[{name:"New Barnsbury – Barnsbury Estate",detail:"Janice Valenzuela – tender due April 2026",action:"07/04/2026: Follow up on tender issue",timing:"Imminent"}]},
-  {contractor:"St William / St James",timing:"Imminent",projects:[{name:"Stratford Gasworks",detail:"Nick Wheldrake – TENDER RECEIVED March 2026",action:"Price and submit now",timing:"Imminent"},{name:"Bow Green",detail:"Marvin Manyepa – TENDER RECEIVED March 2026",action:"Price and submit now",timing:"Imminent"},{name:"Kings Road Park",detail:"Tom Davis – chased 17/03/2026",action:"Chase up",timing:"Mid 2026"}]},
-  {contractor:"Lovell",timing:"Imminent",projects:[{name:"Royston Road",detail:"Mehmet Hassan – tender pack due imminently",action:"01/04/2026: JS look out for tender pack",timing:"Imminent"},{name:"Hawksley Bungalows",detail:"Diven Halai – check back mid-2026",action:"26/06/2026: Chase",timing:"Mid 2026"}]},
-  {contractor:"Bouygues",timing:"Mid 2026",projects:[{name:"Tustin Park",detail:"Sarah Mills – contact May 2026",action:"25/05/2026: Chase up",timing:"Mid 2026"}]},
-  {contractor:"HG Construction",timing:"TBC",projects:[{name:"Bank House, Milton Keynes",detail:"Future pipeline",action:"Monitor",timing:"TBC"},{name:"Bollo Lane Ph2",detail:"Future pipeline",action:"Monitor",timing:"TBC"},{name:"N16 – East Village",detail:"Future pipeline",action:"Monitor",timing:"TBC"}]},
-  {contractor:"Tide Construction",timing:"TBC",projects:[{name:"Greenford Green Block 7",detail:"Awaiting tender",action:"Monitor",timing:"TBC"}]},
-  {contractor:"Vistry East London",timing:"TBC",projects:[{name:"Harriott, Apsley & Pattison Houses",detail:"Awaiting tender",action:"Monitor",timing:"TBC"}]},
-];
 function renderFuture(data){
   document.getElementById('fut-grid').innerHTML=data.map(c=>`
     <div class="fc2">
-      <div class="fh2"><span style="font-weight:600">${c.contractor}</span><span class="bdg" style="background:${timingBg[c.timing]};color:${timingColor[c.timing]}">${c.timing}</span></div>
+      <div class="fh2"><span style="font-weight:600">${c.contractor}</span><span class="bdg" style="background:${tBg[c.timing]};color:${tColor[c.timing]}">${c.timing}</span></div>
       <div>${c.projects.map(p=>`
-        <div class="fp">
-          <div class="dot" style="background:#7F77DD;margin-top:5px;flex-shrink:0"></div>
+        <div class="fp"><div class="dot" style="background:#7F77DD;margin-top:5px;flex-shrink:0"></div>
           <div><div class="fpn">${p.name}</div><div class="fpd">${p.detail}</div><div class="fpa">${p.action}</div></div>
         </div>`).join('')}
       </div>
     </div>`).join('');
 }
+
 function filterFuture(){
   const s=document.getElementById('fs').value.toLowerCase();
   const t=document.getElementById('ft').value;
   renderFuture(futOpps.filter(c=>(!s||c.contractor.toLowerCase().includes(s)||c.projects.some(p=>p.name.toLowerCase().includes(s)))&&(!t||c.timing===t)));
 }
 
-// ── JOB DETAIL MODAL ────────────────────────────────────────────────────────
 function openJob(id){
   const j=jobs.find(x=>x.id===id);
   if(!j)return;
+  document.getElementById('comm-job-id').value=id;
+  document.getElementById('edit-job-id').value=id;
+  document.getElementById('add-comm-form').style.display='none';
+  document.getElementById('edit-form').style.display='none';
+  document.getElementById('edit-next-date').value=j.nextDate||'';
+  document.getElementById('edit-next-act').value=j.nextAct||'';
+  document.getElementById('edit-status').value=j.status||'ok';
+  document.getElementById('edit-stage').value=j.stage||'Submitted';
+  document.getElementById('edit-owner').value=j.owner||'TC';
+  document.getElementById('edit-contact').value=j.contact||'';
   document.getElementById('m-title').textContent=j.cb+' – '+j.proj;
   document.getElementById('m-sub').textContent=j.con+' · '+j.stage;
   document.getElementById('m-info').innerHTML=`
     <div class="iitem"><div class="ilbl">Owner</div><div class="ival">${j.owner}</div></div>
     <div class="iitem"><div class="ilbl">Status</div><div class="ival">${pill(SC[j.status][0],SC[j.status][1])}</div></div>
     <div class="iitem" style="grid-column:1/-1"><div class="ilbl">Contact</div><div class="ival" style="font-size:12px;font-weight:400">${j.contact||'—'}</div></div>`;
-  document.getElementById('m-tl').innerHTML=j.comms.map(c=>`
+  const sortedComms=[...j.comms].sort((a,b)=>new Date(b.d.split('/').reverse().join('-'))-new Date(a.d.split('/').reverse().join('-')));
+  document.getElementById('m-tl').innerHTML=sortedComms.length?sortedComms.map(c=>`
     <li class="tl-item">
       <div class="tl-left"><div class="tl-dot" style="background:${TC2[c.type]}"></div><div class="tl-line"></div></div>
       <div style="flex:1;padding-top:2px">
@@ -663,7 +933,7 @@ function openJob(id){
         <div class="tl-text">${c.text}</div>
         <span style="display:inline-block;margin-top:4px;padding:1px 6px;border-radius:4px;font-size:10px;background:${OC[c.who]||'#f5f5f5'};color:${OT[c.who]||'#333'}">${c.who}</span>
       </div>
-    </li>`).join('');
+    </li>`).join(''):'<li style="color:var(--text-secondary);font-size:12px;padding:8px 0">No communications logged yet.</li>';
   document.getElementById('m-next').innerHTML=`<div style="font-size:12px;font-weight:600;color:#633806;margin-bottom:4px">${j.nextDate}</div><div style="font-size:13px;color:#412402">${j.nextAct}</div>`;
   document.getElementById('m-email-btn').onclick=()=>{
     const subject=encodeURIComponent(`Following up: ${j.cb} – ${j.proj}`);
@@ -672,18 +942,9 @@ function openJob(id){
   };
   document.getElementById('overlay').classList.add('on');
 }
+
 function closeMod(e){if(e.target===document.getElementById('overlay'))document.getElementById('overlay').classList.remove('on');}
 
-// ── MARKETING LEADS ────────────────────────────────────────────────────────
-const leads=[
-  {id:1,title:"Brickwork & masonry subcontract — residential, Tower Hamlets",src:"Contracts Finder",val:"£2.1m",loc:"Tower Hamlets",deadline:"14/04/2026",hot:true,desc:"New build residential scheme, 145 units. External facing brickwork and blockwork. Higgins Partnerships main contractor. Pre-qualification closes 7 April.",url:"https://www.contractsfinder.service.gov.uk"},
-  {id:2,title:"Masonry subcontract — social housing regeneration, Southwark",src:"Find a Tender",val:"£890k",loc:"Southwark",deadline:"10/04/2026",hot:true,desc:"Masonry works to 3 residential blocks. Lovell as framework contractor. Brick and block throughout.",url:"https://www.find-tender.service.gov.uk"},
-  {id:3,title:"Higgins announce contract win — Hackney regeneration, 200 units",src:"Contractor websites",val:"TBC",loc:"Hackney",deadline:"BW Q3 2026",hot:true,desc:"Higgins Partnerships awarded main contract. Brickwork package expected Q3 2026. Chine already on Higgins supply chain.",url:"https://www.higginspartnerships.co.uk"},
-  {id:4,title:"Brickwork package — affordable housing, Barking",src:"Contracts Finder",val:"£1.3m",loc:"Barking",deadline:"22/04/2026",hot:false,desc:"External brickwork to 5-storey residential scheme, 92 affordable homes.",url:"https://www.contractsfinder.service.gov.uk"},
-  {id:5,title:"Masonry works — school extension, North London",src:"Find a Tender",val:"£430k",loc:"Enfield",deadline:"18/04/2026",hot:false,desc:"Brick and block throughout. Main contractor Kier. Tender documentation available now.",url:"https://www.find-tender.service.gov.uk"},
-  {id:6,title:"Planning approval — 320 units, mixed use, Newham",src:"Planning portal",val:"TBC",loc:"Newham",deadline:"Appoint. late 2026",hot:false,desc:"Major mixed-use scheme approved. Masonry construction. Main contractor not yet appointed. Monitor for tender.",url:"https://www.newham.gov.uk/planning"},
-  {id:7,title:"Vistry announce new scheme — 180 units, Greenwich",src:"Construction news",val:"TBC",loc:"Greenwich",deadline:"TBC",hot:false,desc:"Vistry Group announce new partnership scheme. Engage with commercial team to get on tender list.",url:"https://www.constructionenquirer.com"},
-];
 function renderFeed(data){
   document.getElementById('feed-cnt').textContent=data.length+' results';
   document.getElementById('feed-list').innerHTML=data.map(l=>`
@@ -695,19 +956,18 @@ function renderFeed(data){
       <div class="lead-meta">
         <span class="tag tag-src">${l.src}</span>
         <span class="tag tag-loc">${l.loc}</span>
-        ${l.val!=='TBC'?`<span class="tag tag-val">${l.val}`:``}
+        ${l.val!=='TBC'?`<span class="tag tag-val">${l.val}</span>`:''}
         <span style="font-size:11px;color:var(--text-secondary)">Deadline: ${l.deadline}</span>
       </div>
       <div class="lead-desc">${l.desc}</div>
     </div>`).join('');
 }
+
 function filterFeed(){
   const f=document.getElementById('feed-f').value;
   renderFeed(f?leads.filter(l=>l.src===f):leads);
 }
 
-// ── PLANNING DATA ────────────────────────────────────────────────────────
-const plans=[["PA/2026/0234","320 units mixed use","Newham","Approved","#eaf3de","#27500a"],["2026/0187/FUL","185 residential","Tower Hamlets","Approved","#eaf3de","#27500a"],["26/AP/0341","240 units regen","Southwark","Pending","#fef9e7","#b7770d"],["2026/1023","95 unit care home","Hackney","Approved","#eaf3de","#27500a"],["PA/2026/0412","150 units + retail","Barking","Pending","#fef9e7","#b7770d"],["2026/0298/FUL","75 affordable homes","Lewisham","Approved","#eaf3de","#27500a"]];
 function renderPlanning(){
   document.getElementById('plan-list').innerHTML=plans.map(p=>`
     <div class="plan-row" onclick="alert('Search planning portal for ref: ${p[0]}')">
@@ -718,26 +978,7 @@ function renderPlanning(){
     </div>`).join('');
 }
 
-// ── SCAN ANIMATION ────────────────────────────────────────────────────────
-const scanSrc=["Contracts Finder — brickwork packages...","Find a Tender — masonry subcontracts...","Higgins Partnerships website...","Lovell project news...","London planning portal...","Construction Enquirer — contract awards...","Tower Hamlets planning...","Newham planning..."];
-let si=0;
-setInterval(()=>{si=(si+1)%scanSrc.length;const e=document.getElementById('scan-lbl');if(e)e.textContent=scanSrc[si];},2500);
-
-function runScan(){
-  alert('Live scanning requires backend integration. See the technical specification document for API setup instructions (Contracts Finder & Find a Tender). The scan animation above shows how the UI will behave once connected.');
-}
-
-function morningBriefing(){
-  const ov=jobs.filter(j=>j.status==='overdue');
-  const wk=jobs.filter(j=>j.status==='week');
-  alert(`MORNING BRIEFING — ${new Date().toLocaleDateString('en-GB')}\n\n` +
-    `OVERDUE (${ov.length} actions):\n${ov.map(j=>`• ${j.cb} – ${j.proj} (${j.con}) — ${j.nextAct}`).join('\n')}\n\n` +
-    `DUE THIS WEEK (${wk.length} actions):\n${wk.map(j=>`• ${j.cb} – ${j.proj} (${j.con}) — ${j.nextDate}`).join('\n')}\n\n` +
-    `NEW MARKETING LEADS: ${leads.length} (${leads.filter(l=>l.hot).length} hot)\n\n` +
-    `Connect to the Anthropic API for AI-generated briefings. See technical spec.`);
-}
-
-// ── MODULE / PAGE SWITCHING ────────────────────────────────────────────────
+// ── NAV ───────────────────────────────────────────────────────────────────────
 function switchModule(mod,el){
   document.querySelectorAll('.module').forEach(m=>m.classList.remove('on'));
   document.querySelectorAll('.mtab').forEach(t=>t.classList.remove('on'));
@@ -756,13 +997,25 @@ function sp(mod,pgId,el){
   if(pgId==='m-planning')renderPlanning();
 }
 
-// ── KEYWORDS TOGGLE ────────────────────────────────────────────────────────
+// ── MISC ──────────────────────────────────────────────────────────────────────
+const scanSrc=['Contracts Finder — brickwork packages...','Find a Tender — masonry subcontracts...','Higgins Partnerships website...','Lovell project news...','London planning portal...','Construction Enquirer — contract awards...'];
+let si=0;
+setInterval(()=>{si=(si+1)%scanSrc.length;const e=document.getElementById('scan-lbl');if(e)e.textContent=scanSrc[si];},2500);
+
+function runScan(){alert('Live scanning requires backend integration. See the technical specification document for API setup instructions.');}
+
+function morningBriefing(){
+  const ov=jobs.filter(j=>j.status==='overdue');
+  const wk=jobs.filter(j=>j.status==='week');
+  alert(`MORNING BRIEFING — ${new Date().toLocaleDateString('en-GB')}\n\n`+
+    `OVERDUE (${ov.length} actions):\n${ov.map(j=>`• ${j.cb} – ${j.proj} (${j.con}) — ${j.nextAct}`).join('\n')}\n\n`+
+    `DUE THIS WEEK (${wk.length} actions):\n${wk.map(j=>`• ${j.cb} – ${j.proj} (${j.con}) — ${j.nextDate}`).join('\n')}\n\n`+
+    `NEW MARKETING LEADS: ${leads.length} (${leads.filter(l=>l.hot).length} hot)`);
+}
+
 document.querySelectorAll('.kw').forEach(k=>k.addEventListener('click',function(){this.classList.toggle('on');}));
 
-// ── INIT ────────────────────────────────────────────────────────────────────
-renderOverview();
-renderPipeline(jobs);
-renderFeed(leads);
+init();
 </script>
 </body>
 </html>
