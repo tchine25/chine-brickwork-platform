@@ -898,7 +898,7 @@ function renderOverview(){
   if(chaseProjs.length){
     board.style.display='block';
     document.getElementById('badge-fut-chase').textContent=chaseProjs.length;
-    document.getElementById('ov-fut-chase').innerHTML=chaseProjs.map(p=>{const s=calcStatus(p.nextDate);return`<li class="ji" onclick="openOpp('${p.oppId}','${p.id}')"><div class="dot ${dc[s]}"></div><div style="flex:1"><div class="jname">${p.name} <span style="font-weight:400;color:var(--text-secondary)">· ${p.contractor}</span></div><div class="jdesc">${p.action}</div></div><div class="jdate ${dtc[s]}">${p.nextDate.slice(0,5)}</div></li>`;}).join('');
+    document.getElementById('ov-fut-chase').innerHTML=chaseProjs.map(p=>{const s=calcStatus(p.nextDate);return`<li class="ji" onclick="openOppFromOverview('${p.oppId}','${p.id}')"><div class="dot ${dc[s]}"></div><div style="flex:1"><div class="jname">${p.name} <span style="font-weight:400;color:var(--text-secondary)">· ${p.contractor}</span></div><div class="jdesc">${p.action}</div></div><div class="jdate ${dtc[s]}">${p.nextDate.slice(0,5)}</div></li>`;}).join('');
   }else{
     board.style.display='none';
   }
@@ -944,23 +944,26 @@ function renderLog(){
     </div>`).join('');
 }
 
+let _futRenderData=[];
 function renderFuture(data){
-  document.getElementById('fut-grid').innerHTML=data.map(c=>`
+  _futRenderData=data;
+  document.getElementById('fut-grid').innerHTML=data.map((c,ci)=>`
     <div class="fc2">
       <div class="fh2"><span style="font-weight:600">${c.contractor}</span><span class="bdg" style="background:${tBg[c.timing]};color:${tColor[c.timing]}">${c.timing}</span></div>
-      <div>${c.projects.map(p=>`
-        <div class="fp" onclick="openOpp('${c.id}','${p.id}')" style="cursor:pointer;display:flex;align-items:flex-start;gap:8px">
+      <div>${c.projects.map((p,pi)=>`
+        <div class="fp" onclick="openOpp(${ci},${pi})">
           <div class="dot" style="background:#7F77DD;margin-top:5px;flex-shrink:0"></div>
-          <div style="flex:1"><div class="fpn">${p.name}</div><div class="fpd">${p.detail}</div><div class="fpa">${p.action}</div>${p.nextDate?`<div style="font-size:11px;margin-top:3px;color:#633806;font-weight:500">Chase: ${p.nextDate}</div>`:''}</div>
+          <div style="flex:1"><div class="fpn">${p.name}</div><div class="fpd">${p.detail||''}</div><div class="fpa">${p.action||''}</div>${p.nextDate?`<div style="font-size:11px;margin-top:3px;color:#633806;font-weight:500">Chase: ${p.nextDate}</div>`:''}</div>
           <div style="font-size:18px;color:var(--text-secondary);align-self:center;flex-shrink:0">›</div>
         </div>`).join('')}
       </div>
     </div>`).join('');
 }
 
-function openOpp(oppId,projId){
-  let proj=null,opp=null;
-  for(const o of futOpps){const p=o.projects.find(x=>String(x.id)===String(projId));if(p){proj=p;opp=o;break;}}
+function openOpp(ci,pi){
+  const opp=_futRenderData[ci];
+  if(!opp)return;
+  const proj=opp.projects[pi];
   if(!proj)return;
   document.getElementById('opp-title').textContent=proj.name;
   document.getElementById('opp-sub').textContent=opp.contractor+' · '+(proj.timing||opp.timing||'TBC');
@@ -975,6 +978,10 @@ function openOpp(oppId,projId){
   document.getElementById('opp-overlay').classList.add('on');
 }
 function closeOpp(){document.getElementById('opp-overlay').classList.remove('on');}
+
+function openOppFromOverview(oppId,projId){
+  for(let ci=0;ci<futOpps.length;ci++){const o=futOpps[ci];for(let pi=0;pi<o.projects.length;pi++){if(o.projects[pi].id===projId){_futRenderData=futOpps;openOpp(ci,pi);return;}}}
+}
 
 function filterFuture(){
   const s=document.getElementById('fs').value.toLowerCase();
