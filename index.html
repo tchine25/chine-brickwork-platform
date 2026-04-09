@@ -232,14 +232,18 @@
       <div class="met"><div class="ml">Future pipeline</div><div class="mv p" id="cnt-future">—</div><div class="ms">Tracked projects</div></div>
     </div>
     <div class="info-bar">Click any job row to view its full communication history, log a call, or update the next action.</div>
-    <div class="two">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px">
       <div class="card">
-        <div class="card-hdr"><span class="card-title">Overdue actions</span><span class="bdg bdg-r" id="badge-overdue">0 overdue</span></div>
+        <div class="card-hdr"><span class="card-title">Overdue</span><span class="bdg bdg-r" id="badge-overdue">0 overdue</span></div>
         <ul class="jlist" id="ov-overdue"></ul>
       </div>
       <div class="card">
         <div class="card-hdr"><span class="card-title">Due this week</span><span class="bdg bdg-a" id="badge-week">0 due</span></div>
         <ul class="jlist" id="ov-week"></ul>
+      </div>
+      <div class="card">
+        <div class="card-hdr"><span class="card-title">Coming up</span><span class="bdg bdg-b" id="badge-ok">0 jobs</span></div>
+        <ul class="jlist" id="ov-ok"></ul>
       </div>
     </div>
   </div>
@@ -855,14 +859,18 @@ function obadge(o){return`<span style="width:22px;height:22px;border-radius:50%;
 
 // ── RENDER ────────────────────────────────────────────────────────────────────
 function renderOverview(){
-  const ov=jobs.filter(j=>j.status==='overdue').slice(0,8);
-  const wk=jobs.filter(j=>j.status==='week').slice(0,8);
+  const ov=jobs.filter(j=>j.status==='overdue').sort((a,b)=>dateSortVal(a.nextDate)-dateSortVal(b.nextDate));
+  const wk=jobs.filter(j=>j.status==='week').sort((a,b)=>dateSortVal(a.nextDate)-dateSortVal(b.nextDate));
+  const ok=jobs.filter(j=>j.status==='ok').sort((a,b)=>dateSortVal(a.nextDate)-dateSortVal(b.nextDate)).slice(0,10);
   const dc={overdue:'dr',week:'da',ok:'dg'};
   const dtc={overdue:'r',week:'a',ok:'b'};
   const mkLi=j=>`<li class="ji" onclick="openJob('${j.id}')"><div class="dot ${dc[j.status]}"></div><div style="flex:1"><div class="jname">${j.cb} – ${j.proj} <span style="font-weight:400;color:var(--text-secondary)">· ${j.con}</span></div><div class="jdesc">${j.nextAct}</div></div><div class="jdate ${dtc[j.status]}">${j.nextDate.slice(0,5)}</div></li>`;
   document.getElementById('ov-overdue').innerHTML=ov.map(mkLi).join('');
   document.getElementById('ov-week').innerHTML=wk.map(mkLi).join('');
+  document.getElementById('ov-ok').innerHTML=ok.map(mkLi).join('');
+  document.getElementById('badge-ok').textContent=jobs.filter(j=>j.status==='ok').length+' jobs';
 }
+function dateSortVal(d){if(!d)return 9999999;const p=d.split('/');return p.length===3?parseInt(p[2])*10000+parseInt(p[1])*100+parseInt(p[0]):9999999;}
 
 function renderPipeline(data){
   document.getElementById('pipe-body').innerHTML=data.map(j=>`<tr onclick="openJob('${j.id}')">
