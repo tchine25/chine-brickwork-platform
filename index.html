@@ -166,6 +166,22 @@
 </head>
 <body>
 
+<!-- RESET PASSWORD SCREEN -->
+<div id="reset-screen" style="display:none;position:fixed;inset:0;background:var(--bg-tertiary);z-index:9999;align-items:center;justify-content:center">
+  <div class="login-card">
+    <div class="login-logo">
+      <svg viewBox="0 0 28 28" fill="none"><rect x="1" y="1" width="11" height="11" rx="2.5" fill="#1ab8a8"/><rect x="15" y="1" width="11" height="11" rx="2.5" fill="#1ab8a8" opacity="0.45"/><rect x="1" y="15" width="11" height="11" rx="2.5" fill="#1ab8a8" opacity="0.45"/><rect x="15" y="15" width="11" height="11" rx="2.5" fill="#1a6fa8"/></svg>
+      <span class="lt">chine&nbsp;</span><span class="ls">brickwork</span>
+    </div>
+    <div class="login-title">Set new password</div>
+    <div class="login-sub">Choose a new password for your account</div>
+    <div class="form-row"><label>New password</label><input type="password" id="rp-pass" placeholder="New password"></div>
+    <div class="form-row"><label>Confirm password</label><input type="password" id="rp-confirm" placeholder="Confirm password" onkeydown="if(event.key==='Enter')doSetPassword()"></div>
+    <div class="login-err" id="rp-err"></div>
+    <button class="btn btn-primary" style="width:100%;margin-top:8px;padding:10px" onclick="doSetPassword()">Save new password</button>
+  </div>
+</div>
+
 <!-- LOGIN SCREEN -->
 <div id="login-screen">
   <div class="login-card">
@@ -652,9 +668,33 @@ const SEED_PLANS=[
 
 // ── AUTH ─────────────────────────────────────────────────────────────────────
 async function init(){
+  sb.auth.onAuthStateChange((event,session)=>{
+    if(event==='PASSWORD_RECOVERY'){
+      document.getElementById('login-screen').style.display='none';
+      document.getElementById('app').style.display='none';
+      document.getElementById('reset-screen').style.display='flex';
+    }
+  });
   const {data:{session}} = await sb.auth.getSession();
   if(session){ showApp(session.user); await loadData(); setupRealtime(); }
   else { showLogin(); }
+}
+async function doSetPassword(){
+  const pass=document.getElementById('rp-pass').value;
+  const confirm=document.getElementById('rp-confirm').value;
+  const err=document.getElementById('rp-err');
+  err.textContent='';
+  if(!pass||pass.length<6){err.textContent='Password must be at least 6 characters.';return;}
+  if(pass!==confirm){err.textContent='Passwords do not match.';return;}
+  const {error}=await sb.auth.updateUser({password:pass});
+  if(error){err.textContent=error.message;}
+  else{
+    document.getElementById('reset-screen').style.display='none';
+    await sb.auth.signOut();
+    showLogin();
+    document.getElementById('li-err').style.color='var(--success-txt)';
+    document.getElementById('li-err').textContent='Password updated — please sign in.';
+  }
 }
 function showLogin(){
   document.getElementById('login-screen').style.display='flex';
