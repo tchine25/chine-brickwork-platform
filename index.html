@@ -429,7 +429,7 @@
         <input type="hidden" id="edit-job-id">
         <div class="form-grid" style="margin-bottom:10px">
           <div class="form-row" style="margin:0"><label>Next action date</label><input type="text" id="edit-next-date" placeholder="DD/MM/YYYY"></div>
-          <div class="form-row" style="margin:0"><label>Status</label><select id="edit-status"><option value="overdue">Overdue</option><option value="week">Due soon</option><option value="ok">On track</option></select></div>
+          <div class="form-row" style="margin:0"><label>Status (auto from date)</label><input type="text" id="edit-status-display" readonly style="background:var(--bg-tertiary);color:var(--text-secondary)"></div>
         </div>
         <div class="form-row"><label>Next action</label><input type="text" id="edit-next-act"></div>
         <div class="form-row"><label>Stage</label><select id="edit-stage"><option>Submitted</option><option>BOQ Submitted</option><option>Being Priced</option><option>PCSA</option><option>Secured</option><option>Returned Take-Off</option></select></div>
@@ -763,10 +763,11 @@ async function saveComm(){
 
 async function saveJobUpdate(){
   const jobId=document.getElementById('edit-job-id').value;
+  const nextDate=document.getElementById('edit-next-date').value;
   await sb.from('jobs').update({
-    next_date:document.getElementById('edit-next-date').value,
+    next_date:nextDate,
     next_act:document.getElementById('edit-next-act').value,
-    status:document.getElementById('edit-status').value,
+    status:calcStatus(nextDate),
     stage:document.getElementById('edit-stage').value,
     owner:document.getElementById('edit-owner').value,
     contact:document.getElementById('edit-contact').value,
@@ -824,6 +825,20 @@ function toggleEditForm(){
   f.style.display=f.style.display==='none'?'block':'none';
   document.getElementById('add-comm-form').style.display='none';
 }
+
+// ── STATUS CALC ───────────────────────────────────────────────────────────────
+function calcStatus(dateStr){
+  if(!dateStr)return'ok';
+  const p=dateStr.split('/');
+  if(p.length!==3)return'ok';
+  const d=new Date(p[2],p[1]-1,p[0]);
+  const today=new Date();today.setHours(0,0,0,0);
+  const diff=(d-today)/(1000*60*60*24);
+  if(diff<0)return'overdue';
+  if(diff<=7)return'week';
+  return'ok';
+}
+function statusLabel(s){return s==='overdue'?'Overdue':s==='week'?'Due soon':'On track';}
 
 // ── UTILITIES ─────────────────────────────────────────────────────────────────
 const OC={TC:'#E6F1FB',SO:'#E1F5EE',JS:'#FAEEDA',RL:'#FBEAF0',DML:'#F1EFE8'};
@@ -913,6 +928,8 @@ function openJob(id){
   document.getElementById('add-comm-form').style.display='none';
   document.getElementById('edit-form').style.display='none';
   document.getElementById('edit-next-date').value=j.nextDate||'';
+  document.getElementById('edit-status-display').value=statusLabel(calcStatus(j.nextDate||''));
+  document.getElementById('edit-next-date').oninput=function(){document.getElementById('edit-status-display').value=statusLabel(calcStatus(this.value));};
   document.getElementById('edit-next-act').value=j.nextAct||'';
   document.getElementById('edit-status').value=j.status||'ok';
   document.getElementById('edit-stage').value=j.stage||'Submitted';
