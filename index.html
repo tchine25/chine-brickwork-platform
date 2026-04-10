@@ -1005,41 +1005,119 @@ function renderFuture(data){
 }
 
 let _currentOppProjId=null;
-function openOpp(ci,pi){
+let _currentOppComms=[];
+
+function buildOppInfoHtml(proj,opp,statusOverride){
+  const s=statusOverride||(proj.nextDate?calcStatus(proj.nextDate):'ok');
+  return`<div class="iitem"><div class="ilbl">Owner</div><div class="ival">${proj.owner||'—'}</div></div>
+    <div class="iitem"><div class="ilbl">Status</div><div class="ival">${pill(SC[s][0],SC[s][1])}</div></div>
+    <div class="iitem" style="grid-column:1/-1"><div class="ilbl">Contact</div><div class="ival" style="font-size:12px;font-weight:400">${proj.contact||'—'}</div></div>`;
+}
+function liveOppStatusUpdate(dateVal){
+  const projId=document.getElementById('current-opp-proj-id').value;
+  if(!projId)return;
+  let proj=null,opp=null;
+  for(const o of futOpps){const p=o.projects.find(p=>p.id===projId);if(p){proj=p;opp=o;break;}}
+  if(!proj)return;
+  document.getElementById('opp-info').innerHTML=buildOppInfoHtml(proj,opp,calcStatus(dateVal));
+}
+function renderOppTimeline(comms){
+  const sorted=[...comms].sort((a,b)=>new Date(b.d.split('/').reverse().join('-'))-new Date(a.d.split('/').reverse().join('-')));
+  document.getElementById('opp-tl').innerHTML=sorted.length?sorted.map(c=>`
+    <li class="tl-item">
+      <div class="tl-left"><div class="tl-dot" style="background:${TC2[c.type]}"></div><div class="tl-line"></div></div>
+      <div style="flex:1;padding-top:2px">
+        <div class="tl-date" style="display:flex;align-items:center;justify-content:space-between">
+          <span>${c.d}&nbsp;<span style="padding:1px 6px;border-radius:4px;font-size:10px;background:${TC2[c.type]}22;color:${TC2[c.type]};font-weight:600">${TLbl[c.type]}</span></span>
+          ${c.id?`<button onclick="deleteOppComm('${c.id}')" style="font-size:10px;color:var(--danger-txt);background:none;border:none;cursor:pointer;opacity:0.7">✕ delete</button>`:''}
+        </div>
+        <div class="tl-text">${c.text}</div>
+        <span style="display:inline-block;margin-top:4px;padding:1px 6px;border-radius:4px;font-size:10px;background:${OC[c.who]||'#f5f5f5'};color:${OT[c.who]||'#333'}">${c.who}</span>
+      </div>
+    </li>`).join(''):'<li style="color:var(--text-secondary);font-size:12px;padding:8px 0">No communications logged yet.</li>';
+}
+async function openOpp(ci,pi){
   const opp=_futRenderData[ci];
   if(!opp)return;
   const proj=opp.projects[pi];
   if(!proj)return;
   _currentOppProjId=proj.id;
+  document.getElementById('current-opp-proj-id').value=proj.id;
+  document.getElementById('opp-edit-form').style.display='none';
+  const today=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'2-digit',year:'2-digit'});
+  document.getElementById('opp-comm-date').value=today;
+  document.getElementById('opp-comm-text').value='';
+  document.getElementById('opp-next-date').value=proj.nextDate||'';
+  document.getElementById('opp-next-act').value=proj.action||'';
+  document.getElementById('opp-owner').value=proj.owner||'';
+  document.getElementById('opp-contact').value=proj.contact||'';
   document.getElementById('opp-title').textContent=proj.name;
   document.getElementById('opp-sub').textContent=opp.contractor+' · '+(proj.timing||opp.timing||'TBC');
-  document.getElementById('opp-detail').textContent=proj.detail||'';
-  document.getElementById('opp-detail').style.display=proj.detail?'block':'none';
-  document.getElementById('opp-owner').value=proj.owner||'';
-  document.getElementById('opp-next-date').value=proj.nextDate||'';
-  document.getElementById('opp-contact').value=proj.contact||'';
-  document.getElementById('opp-next-act').value=proj.action||'';
-  document.getElementById('opp-save-msg').style.display='none';
+  const det=document.getElementById('opp-detail');
+  det.textContent=proj.detail||'';
+  det.style.display=proj.detail?'block':'none';
+  document.getElementById('opp-info').innerHTML=buildOppInfoHtml(proj,opp);
+  document.getElementById('opp-next-display').innerHTML=proj.nextDate||proj.action
+    ?`<div style="font-size:12px;font-weight:600;color:#633806;margin-bottom:4px">${proj.nextDate||''}</div><div style="font-size:13px;color:#412402">${proj.action||'—'}</div>`
+    :'<div style="color:var(--text-secondary);font-size:12px">No next action set.</div>';
+  _currentOppComms=[];
+  renderOppTimeline([]);
+  const {data:cd}=await sb.from('opp_comms').select('*').eq('proj_id',proj.id).order('created_at',{ascending:false});
+  _currentOppComms=(cd||[]).map(c=>({id:c.id,d:c.d,who:c.who,type:c.type,text:c.text}));
+  renderOppTimeline(_currentOppComms);
   const ov=document.getElementById('opp-overlay');
   ov.style.display='flex';
   ov.onclick=function(e){if(e.target===ov)closeOpp();};
 }
 function closeOpp(){document.getElementById('opp-overlay').style.display='none';}
-async function saveOpp(){
-  if(!_currentOppProjId)return;
-  const owner=document.getElementById('opp-owner').value;
+async function saveOppComm(){
+  const projId=document.getElementById('current-opp-proj-id').value;
+  if(!projId)return;
+  const who=document.getElementById('opp-comm-who').value;
+  const type=document.getElementById('opp-comm-type').value;
+  const dateVal=document.getElementById('opp-comm-date').value;
+  const text=document.getElementById('opp-comm-text').value.trim();
   const nextDate=document.getElementById('opp-next-date').value.trim();
-  const contact=document.getElementById('opp-contact').value.trim();
-  const action=document.getElementById('opp-next-act').value.trim();
-  const msg=document.getElementById('opp-save-msg');
-  const {error}=await sb.from('future_opp_projects').update({owner,next_date:nextDate,contact,action}).eq('id',_currentOppProjId);
-  if(error){msg.style.color='var(--danger-txt)';msg.textContent='Error saving: '+error.message;}
-  else{
-    msg.style.color='var(--success-txt)';msg.textContent='Saved.';
-    futOpps.forEach(o=>o.projects.forEach(p=>{if(p.id===_currentOppProjId){p.owner=owner;p.nextDate=nextDate;p.contact=contact;p.action=action;}}));
-    renderOverview();
+  const nextAct=document.getElementById('opp-next-act').value.trim();
+  if(text){
+    const {data:cd}=await sb.from('opp_comms').insert({proj_id:projId,d:dateVal,who,type,text}).select().single();
+    if(cd)_currentOppComms=[{id:cd.id,d:cd.d,who:cd.who,type:cd.type,text:cd.text},..._currentOppComms];
   }
-  msg.style.display='block';
+  await sb.from('future_opp_projects').update({next_date:nextDate,action:nextAct}).eq('id',projId);
+  futOpps.forEach(o=>o.projects.forEach(p=>{if(p.id===projId){p.nextDate=nextDate;p.action=nextAct;}}));
+  document.getElementById('opp-comm-text').value='';
+  renderOppTimeline(_currentOppComms);
+  let proj=null,opp=null;
+  for(const o of futOpps){const p=o.projects.find(p=>p.id===projId);if(p){proj=p;opp=o;break;}}
+  if(proj){
+    document.getElementById('opp-info').innerHTML=buildOppInfoHtml(proj,opp);
+    document.getElementById('opp-next-display').innerHTML=nextDate||nextAct
+      ?`<div style="font-size:12px;font-weight:600;color:#633806;margin-bottom:4px">${nextDate||''}</div><div style="font-size:13px;color:#412402">${nextAct||'—'}</div>`
+      :'<div style="color:var(--text-secondary);font-size:12px">No next action set.</div>';
+  }
+  renderOverview();
+}
+async function saveOppDetails(){
+  const projId=document.getElementById('current-opp-proj-id').value;
+  if(!projId)return;
+  const owner=document.getElementById('opp-owner').value;
+  const contact=document.getElementById('opp-contact').value.trim();
+  await sb.from('future_opp_projects').update({owner,contact}).eq('id',projId);
+  futOpps.forEach(o=>o.projects.forEach(p=>{if(p.id===projId){p.owner=owner;p.contact=contact;}}));
+  let proj=null,opp=null;
+  for(const o of futOpps){const p=o.projects.find(p=>p.id===projId);if(p){proj=p;opp=o;break;}}
+  if(proj) document.getElementById('opp-info').innerHTML=buildOppInfoHtml(proj,opp);
+  document.getElementById('opp-edit-form').style.display='none';
+}
+async function deleteOppComm(commId){
+  if(!confirm('Delete this entry?'))return;
+  await sb.from('opp_comms').delete().eq('id',commId);
+  _currentOppComms=_currentOppComms.filter(c=>c.id!==commId);
+  renderOppTimeline(_currentOppComms);
+}
+function toggleOppEditForm(){
+  const f=document.getElementById('opp-edit-form');
+  f.style.display=f.style.display==='none'?'block':'none';
 }
 
 function openOppFromOverview(oppId,projId){
@@ -1240,32 +1318,55 @@ init();
 
 <!-- OPP DETAIL MODAL -->
 <div id="opp-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:flex-start;justify-content:center;padding:40px 20px;overflow-y:auto">
-  <div style="background:#fff;border-radius:12px;border:1px solid #e0e0e0;width:100%;max-width:560px;overflow:hidden">
-    <div style="padding:16px 20px;border-bottom:1px solid #e0e0e0;display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
-      <div><div id="opp-title" style="font-size:16px;font-weight:600"></div><div id="opp-sub" style="font-size:13px;color:#666;margin-top:3px"></div></div>
-      <button onclick="closeOpp()" style="font-size:20px;cursor:pointer;color:#666;background:none;border:none;line-height:1">&#x2715;</button>
+  <div class="modal">
+    <div class="modal-hdr">
+      <div><div id="opp-title" style="font-size:16px;font-weight:600"></div><div id="opp-sub" style="font-size:13px;color:var(--text-secondary);margin-top:3px"></div></div>
+      <button onclick="closeOpp()" class="mclose">&#x2715;</button>
     </div>
-    <div style="padding:18px 20px">
-      <div id="opp-detail" style="font-size:12px;color:#666;margin-bottom:14px;padding:8px 12px;background:#f5f5f5;border-radius:6px"></div>
-      <div class="form-grid">
-        <div class="form-row"><label>Owner</label>
-          <select id="opp-owner"><option value="">—</option><option>TC</option><option>SO</option><option>JS</option><option>RL</option><option>DML</option></select>
+    <div class="modal-body">
+      <input type="hidden" id="current-opp-proj-id">
+      <div id="opp-detail" style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;padding:8px 12px;background:var(--bg-secondary);border-radius:6px;display:none"></div>
+      <div class="igrid" id="opp-info"></div>
+      <div class="slbl" style="margin-top:14px">Log a new update</div>
+      <div style="border:2px solid var(--teal);border-radius:var(--radius-md);padding:14px;margin-top:8px">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
+          <div class="form-row" style="margin:0"><label>Date</label><input type="text" id="opp-comm-date" placeholder="DD/MM/YY"></div>
+          <div class="form-row" style="margin:0"><label>Type</label><select id="opp-comm-type"><option value="call">Call</option><option value="email">Email</option><option value="note">Note</option></select></div>
+          <div class="form-row" style="margin:0"><label>Logged by</label><select id="opp-comm-who"><option value="TC">TC — Tim Chase</option><option value="SO">SO — Scott Oldroyd</option><option value="JS">JS — Jinal Shah</option><option value="RL">RL</option><option value="DML">DML</option></select></div>
         </div>
-        <div class="form-row"><label>Next action date (DD/MM/YY)</label>
-          <input type="text" id="opp-next-date" placeholder="e.g. 01/06/26">
+        <div class="form-row"><label>What happened / what was discussed</label><textarea id="opp-comm-text" placeholder="e.g. Called, no answer. Left voicemail..."></textarea></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px">
+          <div class="form-row" style="margin:0"><label>Next action date</label><input type="text" id="opp-next-date" placeholder="DD/MM/YY" oninput="liveOppStatusUpdate(this.value)"></div>
+          <div class="form-row" style="margin:0"><label>Next action</label><input type="text" id="opp-next-act" placeholder="What needs to happen?"></div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;margin-top:10px">
+          <button class="btn btn-primary" onclick="saveOppComm()" style="background:var(--teal);border-color:var(--teal)">Save to log</button>
         </div>
       </div>
-      <div class="form-row"><label>Contact</label>
-        <input type="text" id="opp-contact" placeholder="Name · email · phone">
+      <div style="margin-top:10px">
+        <button class="btn" style="font-size:11px" onclick="toggleOppEditForm()">&#9998; Edit details (owner / contact)</button>
       </div>
-      <div class="form-row"><label>Next action</label>
-        <input type="text" id="opp-next-act" placeholder="What needs to happen?">
+      <div id="opp-edit-form" class="add-comm-box" style="display:none;margin-top:8px">
+        <div class="form-grid">
+          <div class="form-row" style="margin:0"><label>Owner</label>
+            <select id="opp-owner"><option value="">—</option><option>TC</option><option>SO</option><option>JS</option><option>RL</option><option>DML</option></select>
+          </div>
+          <div class="form-row" style="margin:0"><label>Contact</label>
+            <input type="text" id="opp-contact" placeholder="Name · email · phone">
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+          <button class="btn" onclick="toggleOppEditForm()">Cancel</button>
+          <button class="btn btn-primary" onclick="saveOppDetails()">Save details</button>
+        </div>
       </div>
-      <div id="opp-save-msg" style="font-size:12px;margin-top:8px;display:none"></div>
+      <div class="slbl" style="margin-top:16px">Communication history</div>
+      <ul class="tl" id="opp-tl"></ul>
+      <div class="slbl">Next action</div>
+      <div class="nab" id="opp-next-display"></div>
     </div>
-    <div style="padding:13px 20px;border-top:1px solid #e0e0e0;display:flex;gap:8px;justify-content:flex-end">
+    <div class="modal-footer">
       <button class="btn" onclick="closeOpp()">Close</button>
-      <button class="btn btn-primary" onclick="saveOpp()">Save changes</button>
     </div>
   </div>
 </div>
