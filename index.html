@@ -430,48 +430,47 @@
       <button class="mclose" onclick="document.getElementById('overlay').classList.remove('on')">&#x2715;</button>
     </div>
     <div class="modal-body">
+      <input type="hidden" id="current-job-id">
       <div class="igrid" id="m-info"></div>
-      <div class="slbl">Communication history</div>
-      <ul class="tl" id="m-tl"></ul>
-      <div class="slbl">Next action</div>
-      <div class="nab" id="m-next"></div>
-      <!-- Add comm form -->
-      <div class="add-comm-box" id="add-comm-form" style="display:none">
-        <div class="slbl">Log a call / note / email</div>
-        <input type="hidden" id="comm-job-id">
-        <div class="form-grid" style="margin-bottom:10px">
-          <div class="form-row" style="margin:0"><label>Who</label><select id="comm-who"><option>TC</option><option>SO</option><option>JS</option><option>RL</option><option>DML</option></select></div>
+      <!-- Log a new update — always visible -->
+      <div class="slbl" style="margin-top:14px">Log a new update</div>
+      <div style="border:2px solid var(--teal);border-radius:var(--radius-md);padding:14px;margin-top:8px">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
+          <div class="form-row" style="margin:0"><label>Date</label><input type="text" id="comm-date" placeholder="DD/MM/YY"></div>
           <div class="form-row" style="margin:0"><label>Type</label><select id="comm-type"><option value="call">Call</option><option value="email">Email</option><option value="note">Note</option></select></div>
+          <div class="form-row" style="margin:0"><label>Logged by</label><select id="comm-who"><option value="TC">TC — Tim Chase</option><option value="SO">SO — Scott Oldroyd</option><option value="JS">JS — Jinal Shah</option><option value="RL">RL</option><option value="DML">DML</option></select></div>
         </div>
-        <div class="form-row"><label>Notes</label><textarea id="comm-text" placeholder="What happened? What was agreed?"></textarea></div>
-        <div style="display:flex;gap:8px;justify-content:flex-end">
-          <button class="btn" onclick="document.getElementById('add-comm-form').style.display='none'">Cancel</button>
-          <button class="btn btn-primary" onclick="saveComm()">Save</button>
+        <div class="form-row"><label>What happened / what was discussed</label><textarea id="comm-text" placeholder="e.g. Called, no answer. Left voicemail and sent email..."></textarea></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px">
+          <div class="form-row" style="margin:0"><label>Next action date</label><input type="text" id="edit-next-date" placeholder="DD/MM/YY" oninput="liveStatusUpdate(this.value)"></div>
+          <div class="form-row" style="margin:0"><label>Next action</label><input type="text" id="edit-next-act" placeholder="What needs to happen?"></div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;margin-top:10px">
+          <button class="btn btn-primary" onclick="saveCommAndUpdate()" style="background:var(--teal);border-color:var(--teal)">Save to log</button>
         </div>
       </div>
-      <!-- Edit job form -->
-      <div class="add-comm-box" id="edit-form" style="display:none;margin-top:10px">
-        <div class="slbl">Update job details</div>
-        <input type="hidden" id="edit-job-id">
-        <div class="form-grid" style="margin-bottom:10px">
-          <div class="form-row" style="margin:0"><label>Next action date</label><input type="text" id="edit-next-date" placeholder="DD/MM/YYYY"></div>
-          <div class="form-row" style="margin:0"><label>Status (auto from date)</label><input type="text" id="edit-status-display" readonly style="background:var(--bg-tertiary);color:var(--text-secondary)"></div>
-        </div>
-        <div class="form-row"><label>Next action</label><input type="text" id="edit-next-act"></div>
+      <!-- Edit job details toggle -->
+      <div style="margin-top:10px">
+        <button class="btn" style="font-size:11px" onclick="toggleEditForm()">&#9998; Edit job details (stage / owner / contact)</button>
+      </div>
+      <div class="add-comm-box" id="edit-form" style="display:none;margin-top:8px">
         <div class="form-row"><label>Stage</label><select id="edit-stage"><option>Submitted</option><option>BOQ Submitted</option><option>Being Priced</option><option>PCSA</option><option>Secured</option><option>Returned Take-Off</option></select></div>
         <div class="form-grid" style="margin-bottom:10px">
           <div class="form-row" style="margin:0"><label>Owner</label><select id="edit-owner"><option>TC</option><option>SO</option><option>JS</option><option>RL</option><option>DML</option></select></div>
           <div class="form-row" style="margin:0"><label>Contact</label><input type="text" id="edit-contact"></div>
         </div>
         <div style="display:flex;gap:8px;justify-content:flex-end">
-          <button class="btn" onclick="document.getElementById('edit-form').style.display='none'">Cancel</button>
+          <button class="btn" onclick="toggleEditForm()">Cancel</button>
           <button class="btn btn-primary" onclick="saveJobUpdate()">Save changes</button>
         </div>
       </div>
+      <!-- Communication history -->
+      <div class="slbl" style="margin-top:16px">Communication history</div>
+      <ul class="tl" id="m-tl"></ul>
+      <div class="slbl">Next action</div>
+      <div class="nab" id="m-next"></div>
     </div>
     <div class="modal-footer">
-      <button class="btn" onclick="toggleCommForm()">+ Log call / note</button>
-      <button class="btn" onclick="toggleEditForm()">Edit details</button>
       <button class="btn btn-primary" id="m-email-btn">Draft chase email</button>
       <button class="btn" onclick="document.getElementById('overlay').classList.remove('on')">Close</button>
     </div>
@@ -748,7 +747,7 @@ async function loadData(){
   jobs=(jr.data||[]).map(j=>({
     id:j.id,cb:j.cb,con:j.con,proj:j.proj,stage:j.stage,owner:j.owner,folder:j.folder||'',
     nextDate:j.next_date,nextAct:j.next_act,status:calcStatus(j.next_date),contact:j.contact,
-    comms:(cr.data||[]).filter(c=>c.job_id===j.id).map(c=>({d:c.d,who:c.who,type:c.type,text:c.text}))
+    comms:(cr.data||[]).filter(c=>c.job_id===j.id).map(c=>({id:c.id,d:c.d,who:c.who,type:c.type,text:c.text}))
   }));
   leads=(lr.data||[]).map(l=>({id:l.id,title:l.title,src:l.src,val:l.val,loc:l.loc,deadline:l.deadline,hot:l.hot,desc:l.description,url:l.url}));
   logEntries=(logr.data||[]).map(l=>[l.entry_date,l.cb,l.contractor,l.action,l.owner]);
@@ -823,7 +822,7 @@ async function saveComm(){
 }
 
 async function saveJobUpdate(){
-  const jobId=document.getElementById('edit-job-id').value;
+  const jobId=document.getElementById('current-job-id').value;
   const nextDate=document.getElementById('edit-next-date').value;
   await sb.from('jobs').update({
     next_date:nextDate,
@@ -1043,37 +1042,53 @@ function filterFuture(){
   renderFuture(futOpps.filter(c=>(!s||c.contractor.toLowerCase().includes(s)||c.projects.some(p=>p.name.toLowerCase().includes(s)))&&(!t||c.timing===t)));
 }
 
+function buildInfoHtml(jobId,statusOverride){
+  const j=jobs.find(x=>x.id===jobId);if(!j)return'';
+  const s=statusOverride||j.status;
+  return`<div class="iitem"><div class="ilbl">Owner</div><div class="ival">${j.owner||'—'}</div></div>
+    <div class="iitem"><div class="ilbl">Status</div><div class="ival">${pill(SC[s][0],SC[s][1])}</div></div>
+    <div class="iitem" style="grid-column:1/-1"><div class="ilbl">Contact</div><div class="ival" style="font-size:12px;font-weight:400">${j.contact||'—'}</div></div>`;
+}
+function liveStatusUpdate(dateVal){
+  const jobId=document.getElementById('current-job-id').value;
+  if(!jobId)return;
+  document.getElementById('m-info').innerHTML=buildInfoHtml(jobId,calcStatus(dateVal));
+}
+function renderJobTimeline(j){
+  const sorted=[...j.comms].sort((a,b)=>new Date(b.d.split('/').reverse().join('-'))-new Date(a.d.split('/').reverse().join('-')));
+  document.getElementById('m-tl').innerHTML=sorted.length?sorted.map(c=>`
+    <li class="tl-item">
+      <div class="tl-left"><div class="tl-dot" style="background:${TC2[c.type]}"></div><div class="tl-line"></div></div>
+      <div style="flex:1;padding-top:2px">
+        <div class="tl-date" style="display:flex;align-items:center;justify-content:space-between">
+          <span>${c.d}&nbsp;<span style="padding:1px 6px;border-radius:4px;font-size:10px;background:${TC2[c.type]}22;color:${TC2[c.type]};font-weight:600">${TLbl[c.type]}</span></span>
+          ${c.id?`<button onclick="deleteComm('${c.id}','${j.id}')" style="font-size:10px;color:var(--danger-txt);background:none;border:none;cursor:pointer;opacity:0.7" title="Delete">✕ delete</button>`:''}
+        </div>
+        <div class="tl-text">${c.text}</div>
+        <span style="display:inline-block;margin-top:4px;padding:1px 6px;border-radius:4px;font-size:10px;background:${OC[c.who]||'#f5f5f5'};color:${OT[c.who]||'#333'}">${c.who}</span>
+      </div>
+    </li>`).join(''):'<li style="color:var(--text-secondary);font-size:12px;padding:8px 0">No communications logged yet.</li>';
+}
 function openJob(id){
   const j=jobs.find(x=>x.id===id);
   if(!j)return;
-  document.getElementById('comm-job-id').value=id;
-  document.getElementById('edit-job-id').value=id;
-  document.getElementById('add-comm-form').style.display='none';
+  document.getElementById('current-job-id').value=id;
   document.getElementById('edit-form').style.display='none';
+  const today=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'2-digit',year:'2-digit'});
+  document.getElementById('comm-date').value=today;
+  document.getElementById('comm-text').value='';
   document.getElementById('edit-next-date').value=j.nextDate||'';
-  document.getElementById('edit-status-display').value=statusLabel(calcStatus(j.nextDate||''));
-  document.getElementById('edit-next-date').oninput=function(){document.getElementById('edit-status-display').value=statusLabel(calcStatus(this.value));};
   document.getElementById('edit-next-act').value=j.nextAct||'';
   document.getElementById('edit-stage').value=j.stage||'Submitted';
   document.getElementById('edit-owner').value=j.owner||'TC';
   document.getElementById('edit-contact').value=j.contact||'';
   document.getElementById('m-title').textContent=j.cb+' – '+j.proj;
   document.getElementById('m-sub').textContent=j.con+' · '+j.stage;
-  document.getElementById('m-info').innerHTML=`
-    <div class="iitem"><div class="ilbl">Owner</div><div class="ival">${j.owner}</div></div>
-    <div class="iitem"><div class="ilbl">Status</div><div class="ival">${pill(SC[j.status][0],SC[j.status][1])}</div></div>
-    <div class="iitem" style="grid-column:1/-1"><div class="ilbl">Contact</div><div class="ival" style="font-size:12px;font-weight:400">${j.contact||'—'}</div></div>`;
-  const sortedComms=[...j.comms].sort((a,b)=>new Date(b.d.split('/').reverse().join('-'))-new Date(a.d.split('/').reverse().join('-')));
-  document.getElementById('m-tl').innerHTML=sortedComms.length?sortedComms.map(c=>`
-    <li class="tl-item">
-      <div class="tl-left"><div class="tl-dot" style="background:${TC2[c.type]}"></div><div class="tl-line"></div></div>
-      <div style="flex:1;padding-top:2px">
-        <div class="tl-date">${c.d} &nbsp;<span style="padding:1px 6px;border-radius:4px;font-size:10px;background:${TC2[c.type]}22;color:${TC2[c.type]};font-weight:600">${TLbl[c.type]}</span></div>
-        <div class="tl-text">${c.text}</div>
-        <span style="display:inline-block;margin-top:4px;padding:1px 6px;border-radius:4px;font-size:10px;background:${OC[c.who]||'#f5f5f5'};color:${OT[c.who]||'#333'}">${c.who}</span>
-      </div>
-    </li>`).join(''):'<li style="color:var(--text-secondary);font-size:12px;padding:8px 0">No communications logged yet.</li>';
-  document.getElementById('m-next').innerHTML=`<div style="font-size:12px;font-weight:600;color:#633806;margin-bottom:4px">${j.nextDate}</div><div style="font-size:13px;color:#412402">${j.nextAct}</div>`;
+  document.getElementById('m-info').innerHTML=buildInfoHtml(id);
+  renderJobTimeline(j);
+  document.getElementById('m-next').innerHTML=j.nextDate||j.nextAct
+    ?`<div style="font-size:12px;font-weight:600;color:#633806;margin-bottom:4px">${j.nextDate||''}</div><div style="font-size:13px;color:#412402">${j.nextAct||'—'}</div>`
+    :'<div style="color:var(--text-secondary);font-size:12px">No next action set.</div>';
   document.getElementById('m-email-btn').onclick=()=>{
     const subject=encodeURIComponent(`Following up: ${j.cb} – ${j.proj}`);
     const body=encodeURIComponent(`Hi,\n\nI'm following up on ${j.proj}.\n\n${j.nextAct}\n\nKind regards,\nChine Brickwork`);
@@ -1081,8 +1096,56 @@ function openJob(id){
   };
   document.getElementById('overlay').classList.add('on');
 }
-
 function closeMod(e){if(e.target===document.getElementById('overlay'))document.getElementById('overlay').classList.remove('on');}
+async function deleteComm(commId,jobId){
+  if(!confirm('Delete this entry?'))return;
+  await sb.from('comms').delete().eq('id',commId);
+  const job=jobs.find(j=>j.id===jobId);
+  if(job){job.comms=job.comms.filter(c=>c.id!==commId);renderJobTimeline(job);}
+}
+
+async function saveCommAndUpdate(){
+  const jobId=document.getElementById('current-job-id').value;
+  if(!jobId)return;
+  const who=document.getElementById('comm-who').value;
+  const type=document.getElementById('comm-type').value;
+  const dateVal=document.getElementById('comm-date').value;
+  const text=document.getElementById('comm-text').value.trim();
+  const nextDate=document.getElementById('edit-next-date').value.trim();
+  const nextAct=document.getElementById('edit-next-act').value.trim();
+  // Save comm log if text is filled
+  let newComm=null;
+  if(text){
+    const {data:cd,error:ce}=await sb.from('comms').insert({job_id:jobId,d:dateVal,who,type,text}).select().single();
+    if(!ce&&cd)newComm=cd;
+    const job=jobs.find(j=>j.id===jobId);
+    if(job)await sb.from('log_entries').insert({entry_date:dateVal.slice(0,5),cb:job.cb,contractor:job.con,action:text,owner:who});
+  }
+  // Update next date / next act on the job
+  const updates={next_date:nextDate,next_act:nextAct};
+  await sb.from('jobs').update(updates).eq('id',jobId);
+  // Update local jobs array
+  const job=jobs.find(j=>j.id===jobId);
+  if(job){
+    job.nextDate=nextDate;
+    job.nextAct=nextAct;
+    job.status=calcStatus(nextDate);
+    if(newComm)job.comms=[...job.comms,{id:newComm.id,d:newComm.d,who:newComm.who,type:newComm.type,text:newComm.text}];
+  }
+  // Reset form
+  document.getElementById('comm-text').value='';
+  const today=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'2-digit',year:'2-digit'});
+  document.getElementById('comm-date').value=today;
+  // Refresh modal display
+  if(job){
+    document.getElementById('m-info').innerHTML=buildInfoHtml(jobId);
+    renderJobTimeline(job);
+    document.getElementById('m-next').innerHTML=nextDate||nextAct
+      ?`<div style="font-size:12px;font-weight:600;color:#633806;margin-bottom:4px">${nextDate||''}</div><div style="font-size:13px;color:#412402">${nextAct||'—'}</div>`
+      :'<div style="color:var(--text-secondary);font-size:12px">No next action set.</div>';
+  }
+  renderOverview();
+}
 
 function renderFeed(data){
   document.getElementById('feed-cnt').textContent=data.length+' results';
