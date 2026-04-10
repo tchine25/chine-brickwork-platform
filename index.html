@@ -995,26 +995,43 @@ function renderFuture(data){
     </div>`).join('');
 }
 
+let _currentOppProjId=null;
 function openOpp(ci,pi){
   const opp=_futRenderData[ci];
   if(!opp)return;
   const proj=opp.projects[pi];
   if(!proj)return;
+  _currentOppProjId=proj.id;
   document.getElementById('opp-title').textContent=proj.name;
   document.getElementById('opp-sub').textContent=opp.contractor+' · '+(proj.timing||opp.timing||'TBC');
-  document.getElementById('opp-info').innerHTML=`
-    <div class="iitem"><div class="ilbl">Contractor</div><div class="ival">${opp.contractor}</div></div>
-    <div class="iitem"><div class="ilbl">Owner</div><div class="ival">${proj.owner||'—'}</div></div>
-    <div class="iitem" style="grid-column:1/-1"><div class="ilbl">Contact</div><div class="ival" style="font-size:12px;font-weight:400">${proj.contact||'—'}</div></div>
-    <div class="iitem" style="grid-column:1/-1"><div class="ilbl">Detail</div><div class="ival" style="font-size:12px;font-weight:400">${proj.detail||'—'}</div></div>`;
-  document.getElementById('opp-action').innerHTML=proj.nextDate||proj.action
-    ?`<div style="font-size:12px;font-weight:600;color:#633806;margin-bottom:4px">${proj.nextDate||'No date set'}</div><div style="font-size:13px;color:#412402">${proj.action||'—'}</div>`
-    :'<div style="color:var(--text-secondary);font-size:12px">No action set.</div>';
+  document.getElementById('opp-detail').textContent=proj.detail||'';
+  document.getElementById('opp-detail').style.display=proj.detail?'block':'none';
+  document.getElementById('opp-owner').value=proj.owner||'';
+  document.getElementById('opp-next-date').value=proj.nextDate||'';
+  document.getElementById('opp-contact').value=proj.contact||'';
+  document.getElementById('opp-next-act').value=proj.action||'';
+  document.getElementById('opp-save-msg').style.display='none';
   const ov=document.getElementById('opp-overlay');
   ov.style.display='flex';
   ov.onclick=function(e){if(e.target===ov)closeOpp();};
 }
 function closeOpp(){document.getElementById('opp-overlay').style.display='none';}
+async function saveOpp(){
+  if(!_currentOppProjId)return;
+  const owner=document.getElementById('opp-owner').value;
+  const nextDate=document.getElementById('opp-next-date').value.trim();
+  const contact=document.getElementById('opp-contact').value.trim();
+  const action=document.getElementById('opp-next-act').value.trim();
+  const msg=document.getElementById('opp-save-msg');
+  const {error}=await sb.from('future_opp_projects').update({owner,next_date:nextDate,contact,action}).eq('id',_currentOppProjId);
+  if(error){msg.style.color='var(--danger-txt)';msg.textContent='Error saving: '+error.message;}
+  else{
+    msg.style.color='var(--success-txt)';msg.textContent='Saved.';
+    futOpps.forEach(o=>o.projects.forEach(p=>{if(p.id===_currentOppProjId){p.owner=owner;p.nextDate=nextDate;p.contact=contact;p.action=action;}}));
+    renderOverview();
+  }
+  msg.style.display='block';
+}
 
 function openOppFromOverview(oppId,projId){
   for(let ci=0;ci<futOpps.length;ci++){const o=futOpps[ci];for(let pi=0;pi<o.projects.length;pi++){if(o.projects[pi].id===projId){_futRenderData=futOpps;openOpp(ci,pi);return;}}}
@@ -1156,12 +1173,26 @@ init();
       <button onclick="closeOpp()" style="font-size:20px;cursor:pointer;color:#666;background:none;border:none;line-height:1">&#x2715;</button>
     </div>
     <div style="padding:18px 20px">
-      <div class="igrid" id="opp-info"></div>
-      <div class="slbl" style="margin-top:16px">Next action</div>
-      <div style="background:#fef9e7;border-radius:8px;padding:12px;margin-top:6px" id="opp-action"></div>
+      <div id="opp-detail" style="font-size:12px;color:#666;margin-bottom:14px;padding:8px 12px;background:#f5f5f5;border-radius:6px"></div>
+      <div class="form-grid">
+        <div class="form-row"><label>Owner</label>
+          <select id="opp-owner"><option value="">—</option><option>TC</option><option>SO</option><option>JS</option><option>RL</option><option>DML</option></select>
+        </div>
+        <div class="form-row"><label>Next action date (DD/MM/YY)</label>
+          <input type="text" id="opp-next-date" placeholder="e.g. 01/06/26">
+        </div>
+      </div>
+      <div class="form-row"><label>Contact</label>
+        <input type="text" id="opp-contact" placeholder="Name · email · phone">
+      </div>
+      <div class="form-row"><label>Next action</label>
+        <input type="text" id="opp-next-act" placeholder="What needs to happen?">
+      </div>
+      <div id="opp-save-msg" style="font-size:12px;margin-top:8px;display:none"></div>
     </div>
     <div style="padding:13px 20px;border-top:1px solid #e0e0e0;display:flex;gap:8px;justify-content:flex-end">
       <button class="btn" onclick="closeOpp()">Close</button>
+      <button class="btn btn-primary" onclick="saveOpp()">Save changes</button>
     </div>
   </div>
 </div>
