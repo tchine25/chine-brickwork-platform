@@ -1549,6 +1549,13 @@ function openJobContactPicker(){
   const sel=document.getElementById('jc-picker-select');
   sel.innerHTML='<option value="">— choose contact —</option>'+
     _jobContactorContacts.map(c=>`<option value="${c.id}">${c.name}${c.role?' · '+c.role:''}${c.is_primary?' (Primary)':''}</option>`).join('');
+  sel.onchange=function(){
+    const ct=_jobContactorContacts.find(c=>c.id===sel.value);
+    document.getElementById('jc-name').value=ct?ct.name:'';
+    document.getElementById('jc-role').value=ct?ct.role||'':'';
+    document.getElementById('jc-email').value=ct?ct.email||'':'';
+    document.getElementById('jc-phone').value=ct?ct.phone||'':'';
+  };
   ['jc-name','jc-role','jc-email','jc-phone'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('job-contact-picker').style.display='block';
 }
