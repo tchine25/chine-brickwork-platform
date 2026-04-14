@@ -1054,10 +1054,12 @@ function openNewOpp(){
   document.getElementById('no-contact').innerHTML='<option value="">— type contractor name first —</option>';
   document.getElementById('new-opp-overlay').classList.add('on');
 }
-function updateOppContactDropdown(){
+async function updateOppContactDropdown(){
   const conName=document.getElementById('no-con').value.trim().toLowerCase();
   const sel=document.getElementById('no-contact');
   if(!conName){sel.innerHTML='<option value="">— type contractor name first —</option>';return;}
+  // ensure contacts are loaded
+  if(!contractors.length)await loadClientsIfNeeded();
   const matched=contractors.find(c=>c.name.toLowerCase()===conName)||contractors.find(c=>c.name.toLowerCase().includes(conName));
   if(!matched){sel.innerHTML='<option value="">— no contacts found —</option>';return;}
   const contacts=contractorContacts.filter(c=>c.contractor_id===matched.id);
