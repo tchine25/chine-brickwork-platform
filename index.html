@@ -252,6 +252,7 @@
     <div class="snt" onclick="sp('crm','c-actions',this)">All actions</div>
     <div class="snt" onclick="sp('crm','c-log',this)">Call log</div>
     <div class="snt" onclick="sp('crm','c-future',this)">Future opportunities</div>
+    <div class="snt" onclick="sp('crm','c-archive',this);loadArchive()">Archive <span class="count-badge" id="archive-badge" style="background:#e5e5e5;color:#666;margin-left:4px"></span></div>
   </div>
 
   <div id="c-overview" class="pg on">
@@ -344,6 +345,28 @@
       <button class="btn btn-primary" onclick="openNewOpp()">+ Add opportunity</button>
     </div>
     <div class="fut-grid" id="fut-grid"></div>
+  </div>
+
+  <div id="c-archive" class="pg">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div>
+        <div style="font-size:15px;font-weight:600;color:var(--text-primary)">Archived jobs</div>
+        <div style="font-size:12px;color:var(--text-secondary);margin-top:2px">Lost tenders and closed opportunities</div>
+      </div>
+      <input id="archive-search" placeholder="🔍 Search..." oninput="renderArchive()" style="font-size:12px;padding:6px 12px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--bg-secondary);color:var(--text-primary);width:220px">
+    </div>
+    <div class="fullcard">
+      <table class="tbl"><thead><tr>
+        <th style="width:80px">CB No.</th>
+        <th style="width:150px">Contractor</th>
+        <th>Project</th>
+        <th style="width:130px">Stage</th>
+        <th style="width:44px">Owner</th>
+        <th style="width:110px">Archived</th>
+        <th style="width:80px"></th>
+      </tr></thead>
+      <tbody id="archive-body"></tbody></table>
+    </div>
   </div>
 </div>
 
@@ -550,6 +573,7 @@
       <div class="nab" id="m-next"></div>
     </div>
     <div class="modal-footer">
+      <button class="btn" id="m-archive-btn" style="color:var(--danger-txt);border-color:var(--danger-txt)" onclick="archiveJob()">Archive job</button>
       <button class="btn btn-primary" id="m-email-btn">Draft chase email</button>
       <button class="btn" onclick="document.getElementById('overlay').classList.remove('on')">Close</button>
     </div>
@@ -850,7 +874,7 @@ async function loadData(){
   if(!ej||!ej.length) await seedDatabase();
 
   const [jr,cr,lr,logr,for_,fpr,pr]=await Promise.all([
-    sb.from('jobs').select('*').order('id'),
+    sb.from('jobs').select('*').eq('archived',false).order('id'),
     sb.from('comms').select('*').order('created_at'),
     sb.from('leads').select('*').order('id'),
     sb.from('log_entries').select('*').order('created_at',{ascending:false}),
@@ -1402,6 +1426,52 @@ function openJob(id){
   document.getElementById('overlay').classList.add('on');
 }
 function closeMod(e){if(e.target===document.getElementById('overlay'))document.getElementById('overlay').classList.remove('on');}
+async function archiveJob(){
+  const jobId=document.getElementById('current-job-id').value;
+  if(!jobId)return;
+  const j=jobs.find(x=>x.id===jobId);
+  if(!j)return;
+  if(!confirm(`Archive "${j.cb} – ${j.proj}"?\n\nThis will remove it from the active pipeline. You can view it in the Archive tab.`))return;
+  await sb.from('jobs').update({archived:true,archived_at:new Date().toISOString()}).eq('id',jobId);
+  jobs.splice(jobs.findIndex(x=>x.id===jobId),1);
+  document.getElementById('overlay').classList.remove('on');
+  updateMetrics();
+  renderOverview();
+  renderPipeline(jobs);
+  // update archive badge if already loaded
+  const badge=document.getElementById('archive-badge');
+  if(badge&&badge.textContent)badge.textContent=parseInt(badge.textContent||0)+1;
+}
+
+let _archiveLoaded=false;
+let archivedJobs=[];
+async function loadArchive(){
+  const {data}=await sb.from('jobs').select('*').eq('archived',true).order('archived_at',{ascending:false});
+  archivedJobs=data||[];
+  document.getElementById('archive-badge').textContent=archivedJobs.length||'';
+  renderArchive();
+}
+function renderArchive(){
+  const q=(document.getElementById('archive-search')||{value:''}).value.trim().toLowerCase();
+  const filtered=q?archivedJobs.filter(j=>(j.cb+' '+j.proj+' '+j.con).toLowerCase().includes(q)):archivedJobs;
+  document.getElementById('archive-body').innerHTML=filtered.length?filtered.map(j=>`<tr>
+    <td style="font-weight:600">${j.cb}</td>
+    <td>${j.con}</td>
+    <td>${j.proj}</td>
+    <td>${pill(SP[j.stage]||'pp',j.stage)}</td>
+    <td style="text-align:center">${obadge(j.owner)}</td>
+    <td style="font-size:11px;color:var(--text-secondary)">${j.archived_at?new Date(j.archived_at).toLocaleDateString('en-GB'):''}</td>
+    <td style="text-align:right"><button onclick="restoreJob('${j.id}')" class="btn" style="font-size:11px;padding:3px 8px">Restore</button></td>
+  </tr>`).join(''):'<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-secondary);font-size:13px">No archived jobs.</td></tr>';
+}
+async function restoreJob(jobId){
+  await sb.from('jobs').update({archived:false,archived_at:null}).eq('id',jobId);
+  archivedJobs=archivedJobs.filter(j=>j.id!==jobId);
+  document.getElementById('archive-badge').textContent=archivedJobs.length||'';
+  renderArchive();
+  await loadData();
+}
+
 async function deleteComm(commId,jobId){
   if(!confirm('Delete this entry?'))return;
   await sb.from('comms').delete().eq('id',commId);
