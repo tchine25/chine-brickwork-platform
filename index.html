@@ -493,9 +493,10 @@
           <div class="form-row" style="margin:0"><label>Logged by</label><select id="comm-who"><option value="TC">TC — Tim Chase</option><option value="SO">SO — Scott Oldroyd</option><option value="JS">JS — Jinal Shah</option><option value="RL">RL</option><option value="DML">DML</option></select></div>
         </div>
         <div class="form-row"><label>What happened / what was discussed</label><textarea id="comm-text" placeholder="e.g. Called, no answer. Left voicemail and sent email..."></textarea></div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px">
+        <div style="display:grid;grid-template-columns:130px 1fr 110px;gap:8px;margin-top:6px">
           <div class="form-row" style="margin:0"><label>Next action date</label><input type="text" id="edit-next-date" placeholder="DD/MM/YY" oninput="liveStatusUpdate(this.value)"></div>
           <div class="form-row" style="margin:0"><label>Next action</label><input type="text" id="edit-next-act" placeholder="What needs to happen?"></div>
+          <div class="form-row" style="margin:0"><label>Action by</label><select id="edit-next-who"><option value="">—</option><option value="TC">TC</option><option value="SO">SO</option><option value="JS">JS</option><option value="RL">RL</option><option value="DML">DML</option></select></div>
         </div>
         <div style="display:flex;justify-content:flex-end;margin-top:10px">
           <button class="btn btn-primary" onclick="saveCommAndUpdate()" style="background:var(--teal);border-color:var(--teal)">Save to log</button>
@@ -854,7 +855,7 @@ async function loadData(){
 
   jobs=(jr.data||[]).map(j=>({
     id:j.id,cb:j.cb,con:j.con,proj:j.proj,stage:j.stage,owner:j.owner,folder:j.folder||'',
-    nextDate:j.next_date,nextAct:j.next_act,status:calcStatus(j.next_date),contact:j.contact,
+    nextDate:j.next_date,nextAct:j.next_act,nextActWho:j.next_act_who||'',status:calcStatus(j.next_date),contact:j.contact,
     comms:(cr.data||[]).filter(c=>c.job_id===j.id).map(c=>({id:c.id,d:c.d,who:c.who,type:c.type,text:c.text}))
   }));
   leads=(lr.data||[]).map(l=>({id:l.id,title:l.title,src:l.src,val:l.val,loc:l.loc,deadline:l.deadline,hot:l.hot,desc:l.description,url:l.url}));
@@ -1320,17 +1321,49 @@ function liveStatusUpdate(dateVal){
 function renderJobTimeline(j){
   const sorted=[...j.comms].sort((a,b)=>new Date(b.d.split('/').reverse().join('-'))-new Date(a.d.split('/').reverse().join('-')));
   document.getElementById('m-tl').innerHTML=sorted.length?sorted.map(c=>`
-    <li class="tl-item">
+    <li class="tl-item" id="tl-item-${c.id}">
       <div class="tl-left"><div class="tl-dot" style="background:${TC2[c.type]}"></div><div class="tl-line"></div></div>
       <div style="flex:1;padding-top:2px">
         <div class="tl-date" style="display:flex;align-items:center;justify-content:space-between">
           <span>${c.d}&nbsp;<span style="padding:1px 6px;border-radius:4px;font-size:10px;background:${TC2[c.type]}22;color:${TC2[c.type]};font-weight:600">${TLbl[c.type]}</span></span>
-          ${c.id?`<button onclick="deleteComm('${c.id}','${j.id}')" style="font-size:10px;color:var(--danger-txt);background:none;border:none;cursor:pointer;opacity:0.7" title="Delete">✕ delete</button>`:''}
+          <span style="display:flex;gap:8px">
+            ${c.id?`<button onclick="editComm('${c.id}','${j.id}')" style="font-size:10px;color:var(--teal);background:none;border:none;cursor:pointer;opacity:0.8">✎ edit</button>`:''}
+            ${c.id?`<button onclick="deleteComm('${c.id}','${j.id}')" style="font-size:10px;color:var(--danger-txt);background:none;border:none;cursor:pointer;opacity:0.7">✕ delete</button>`:''}
+          </span>
         </div>
-        <div class="tl-text">${c.text}</div>
+        <div class="tl-text" id="tl-text-${c.id}">${c.text}</div>
         <span style="display:inline-block;margin-top:4px;padding:1px 6px;border-radius:4px;font-size:10px;background:${OC[c.who]||'#f5f5f5'};color:${OT[c.who]||'#333'}">${c.who}</span>
       </div>
     </li>`).join(''):'<li style="color:var(--text-secondary);font-size:12px;padding:8px 0">No communications logged yet.</li>';
+}
+function editComm(commId,jobId){
+  const textEl=document.getElementById('tl-text-'+commId);
+  if(!textEl)return;
+  const orig=textEl.textContent;
+  textEl.innerHTML=`<textarea id="tl-edit-${commId}" style="width:100%;font-size:13px;padding:6px;border:1px solid var(--teal);border-radius:4px;resize:vertical;min-height:60px;background:var(--bg-primary);color:var(--text-primary)">${orig}</textarea>
+    <div style="display:flex;gap:6px;margin-top:4px">
+      <button onclick="saveCommEdit('${commId}','${jobId}')" style="font-size:11px;padding:3px 10px;background:var(--teal);color:#fff;border:none;border-radius:4px;cursor:pointer">Save</button>
+      <button onclick="cancelCommEdit('${commId}',${JSON.stringify(orig)})" style="font-size:11px;padding:3px 10px;background:none;border:1px solid var(--border);border-radius:4px;cursor:pointer;color:var(--text-primary)">Cancel</button>
+    </div>`;
+  document.getElementById('tl-edit-'+commId).focus();
+}
+function cancelCommEdit(commId,orig){
+  const textEl=document.getElementById('tl-text-'+commId);
+  if(textEl)textEl.innerHTML=orig;
+}
+async function saveCommEdit(commId,jobId){
+  const ta=document.getElementById('tl-edit-'+commId);
+  if(!ta)return;
+  const newText=ta.value.trim();
+  if(!newText)return;
+  const {error}=await sb.from('comms').update({text:newText}).eq('id',commId);
+  if(error){alert(error.message);return;}
+  const job=jobs.find(j=>j.id===jobId);
+  if(job){
+    const comm=job.comms.find(c=>c.id===commId);
+    if(comm)comm.text=newText;
+    renderJobTimeline(job);
+  }
 }
 function openJob(id){
   const j=jobs.find(x=>x.id===id);
@@ -1342,6 +1375,7 @@ function openJob(id){
   document.getElementById('comm-text').value='';
   document.getElementById('edit-next-date').value=j.nextDate||'';
   document.getElementById('edit-next-act').value=j.nextAct||'';
+  document.getElementById('edit-next-who').value=j.nextActWho||'';
   document.getElementById('edit-stage').value=j.stage||'Submitted';
   document.getElementById('edit-owner').value=j.owner||'TC';
   document.getElementById('edit-contact').value=j.contact||'';
@@ -1350,7 +1384,7 @@ function openJob(id){
   document.getElementById('m-info').innerHTML=buildInfoHtml(id);
   renderJobTimeline(j);
   document.getElementById('m-next').innerHTML=j.nextDate||j.nextAct
-    ?`<div style="font-size:12px;font-weight:600;color:#633806;margin-bottom:4px">${j.nextDate||''}</div><div style="font-size:13px;color:#412402">${j.nextAct||'—'}</div>`
+    ?`<div style="font-size:12px;font-weight:600;color:#633806;margin-bottom:4px">${j.nextDate||''}${j.nextActWho?`&nbsp;<span style="font-size:11px;font-weight:600;padding:1px 7px;border-radius:4px;background:${OC[j.nextActWho]||'#f0f0f0'};color:${OT[j.nextActWho]||'#333'}">${j.nextActWho}</span>`:''}</div><div style="font-size:13px;color:#412402">${j.nextAct||'—'}</div>`
     :'<div style="color:var(--text-secondary);font-size:12px">No next action set.</div>';
   document.getElementById('m-email-btn').onclick=()=>{
     const subject=encodeURIComponent(`Following up: ${j.cb} – ${j.proj}`);
@@ -1445,6 +1479,7 @@ async function saveCommAndUpdate(){
   const text=document.getElementById('comm-text').value.trim();
   const nextDate=document.getElementById('edit-next-date').value.trim();
   const nextAct=document.getElementById('edit-next-act').value.trim();
+  const nextActWho=document.getElementById('edit-next-who').value;
   // Save comm log if text is filled
   let newComm=null;
   if(text){
@@ -1454,13 +1489,14 @@ async function saveCommAndUpdate(){
     if(job)await sb.from('log_entries').insert({entry_date:dateVal.slice(0,5),cb:job.cb,contractor:job.con,action:text,owner:who});
   }
   // Update next date / next act on the job
-  const updates={next_date:nextDate,next_act:nextAct};
+  const updates={next_date:nextDate,next_act:nextAct,next_act_who:nextActWho||null};
   await sb.from('jobs').update(updates).eq('id',jobId);
   // Update local jobs array
   const job=jobs.find(j=>j.id===jobId);
   if(job){
     job.nextDate=nextDate;
     job.nextAct=nextAct;
+    job.nextActWho=nextActWho;
     job.status=calcStatus(nextDate);
     if(newComm)job.comms=[...job.comms,{id:newComm.id,d:newComm.d,who:newComm.who,type:newComm.type,text:newComm.text}];
   }
@@ -1473,7 +1509,7 @@ async function saveCommAndUpdate(){
     document.getElementById('m-info').innerHTML=buildInfoHtml(jobId);
     renderJobTimeline(job);
     document.getElementById('m-next').innerHTML=nextDate||nextAct
-      ?`<div style="font-size:12px;font-weight:600;color:#633806;margin-bottom:4px">${nextDate||''}</div><div style="font-size:13px;color:#412402">${nextAct||'—'}</div>`
+      ?`<div style="font-size:12px;font-weight:600;color:#633806;margin-bottom:4px">${nextDate||''}${nextActWho?`&nbsp;<span style="font-size:11px;font-weight:600;padding:1px 7px;border-radius:4px;background:${OC[nextActWho]||'#f0f0f0'};color:${OT[nextActWho]||'#333'}">${nextActWho}</span>`:''}</div><div style="font-size:13px;color:#412402">${nextAct||'—'}</div>`
       :'<div style="color:var(--text-secondary);font-size:12px">No next action set.</div>';
   }
   renderOverview();
