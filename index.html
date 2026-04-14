@@ -263,8 +263,14 @@
       <div class="met"><div class="ml">Future pipeline</div><div class="mv p" id="cnt-future">—</div><div class="ms">Tracked projects</div></div>
     </div>
     <div style="padding:10px 0 14px;display:flex;gap:10px;align-items:center">
+      <select id="ov-folder" onchange="renderOverview()" style="font-size:13px;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--bg-primary);color:var(--text-primary);min-width:170px">
+        <option value="">All folders</option>
+        <option value="5a">5a. Tenders</option>
+        <option value="5b">5b. Returned Tenders</option>
+        <option value="5c">5c. Live Jobs</option>
+      </select>
       <input id="ov-search" placeholder="🔍  Search jobs, contractors, CB numbers..." oninput="renderOverview()" style="flex:1;font-size:13px;padding:8px 14px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--bg-primary);color:var(--text-primary)">
-      <button onclick="document.getElementById('ov-search').value='';renderOverview()" class="btn" style="font-size:12px">Clear</button>
+      <button onclick="document.getElementById('ov-search').value='';document.getElementById('ov-folder').value='';renderOverview()" class="btn" style="font-size:12px">Clear</button>
     </div>
     <div id="ov-search-results" style="display:none;margin-bottom:14px">
       <div class="card">
@@ -335,6 +341,7 @@
     <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
       <input id="fs" placeholder="Search contractor or project..." oninput="filterFuture()" style="flex:1;min-width:160px;font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--bg-secondary);color:var(--text-primary)">
       <select id="ft" onchange="filterFuture()" style="font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--bg-secondary);color:var(--text-primary)"><option value="">All timings</option><option>Imminent</option><option>Mid 2026</option><option>Late 2026</option><option>TBC</option></select>
+      <button class="btn btn-primary" onclick="openNewOpp()">+ Add opportunity</button>
     </div>
     <div class="fut-grid" id="fut-grid"></div>
   </div>
@@ -550,6 +557,41 @@
     <div class="modal-footer">
       <button class="btn" onclick="closeNewJob()">Cancel</button>
       <button class="btn btn-primary" onclick="saveNewJob()">Add job</button>
+    </div>
+  </div>
+</div>
+
+<!-- NEW OPPORTUNITY MODAL -->
+<div class="overlay" id="new-opp-overlay" onclick="if(event.target===this)closeNewOpp()">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div style="font-size:16px;font-weight:600">Add future opportunity</div>
+      <button class="mclose" onclick="closeNewOpp()">&#x2715;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row"><label>Contractor</label>
+        <input type="text" id="no-con" placeholder="e.g. Galliford Try" list="no-con-list" autocomplete="off">
+        <datalist id="no-con-list"></datalist>
+      </div>
+      <div class="form-row"><label>Project name</label><input type="text" id="no-proj" placeholder="e.g. King Street Phase 2"></div>
+      <div class="form-grid">
+        <div class="form-row"><label>Timing</label>
+          <select id="no-timing"><option>Imminent</option><option>Mid 2026</option><option selected>Late 2026</option><option>TBC</option></select>
+        </div>
+        <div class="form-row"><label>Owner</label>
+          <select id="no-owner"><option>TC</option><option>SO</option><option>JS</option><option>RL</option><option>DML</option></select>
+        </div>
+      </div>
+      <div class="form-row"><label>Detail</label><input type="text" id="no-detail" placeholder="e.g. Awaiting tender, Future pipeline"></div>
+      <div class="form-grid">
+        <div class="form-row"><label>Action</label><input type="text" id="no-action" placeholder="e.g. Monitor, Chase"></div>
+        <div class="form-row"><label>Next action date (DD/MM/YYYY)</label><input type="text" id="no-date" placeholder="30/06/2026"></div>
+      </div>
+      <div id="no-err" style="color:var(--danger-txt);font-size:12px;margin-top:4px"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeNewOpp()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveNewOpp()">Add opportunity</button>
     </div>
   </div>
 </div>
@@ -918,6 +960,58 @@ async function saveLogCall(){
 
 function openNewJob(){document.getElementById('new-job-overlay').classList.add('on');}
 function closeNewJob(){document.getElementById('new-job-overlay').classList.remove('on');document.getElementById('nj-err').textContent='';}
+
+function openNewOpp(){
+  // populate contractor datalist from existing futOpps
+  const dl=document.getElementById('no-con-list');
+  dl.innerHTML=futOpps.map(o=>`<option value="${o.contractor}">`).join('');
+  document.getElementById('no-con').value='';
+  document.getElementById('no-proj').value='';
+  document.getElementById('no-detail').value='';
+  document.getElementById('no-action').value='Monitor';
+  document.getElementById('no-date').value='';
+  document.getElementById('no-err').textContent='';
+  document.getElementById('new-opp-overlay').classList.add('on');
+}
+function closeNewOpp(){document.getElementById('new-opp-overlay').classList.remove('on');}
+
+async function saveNewOpp(){
+  const con=document.getElementById('no-con').value.trim();
+  const proj=document.getElementById('no-proj').value.trim();
+  if(!con){document.getElementById('no-err').textContent='Contractor is required';return;}
+  if(!proj){document.getElementById('no-err').textContent='Project name is required';return;}
+  const timing=document.getElementById('no-timing').value;
+  const owner=document.getElementById('no-owner').value;
+  const detail=document.getElementById('no-detail').value.trim();
+  const action=document.getElementById('no-action').value.trim()||'Monitor';
+  const nextDate=document.getElementById('no-date').value.trim();
+
+  // find or create the parent future_opp row for this contractor
+  let oppId=null;
+  const existing=futOpps.find(o=>o.contractor.toLowerCase()===con.toLowerCase());
+  if(existing){
+    oppId=existing.id;
+  } else {
+    const {data:newOpp,error:oe}=await sb.from('future_opps').insert({contractor:con,timing}).select().single();
+    if(oe){document.getElementById('no-err').textContent=oe.message;return;}
+    oppId=newOpp.id;
+  }
+
+  // insert the project
+  const {error:pe}=await sb.from('future_opp_projects').insert({
+    opp_id:oppId,
+    name:proj,
+    detail,
+    action,
+    timing,
+    next_date:nextDate||null,
+    owner,
+  });
+  if(pe){document.getElementById('no-err').textContent=pe.message;return;}
+  closeNewOpp();
+  await loadData();
+  renderFuture(futOpps);
+}
 function openLogCall(){document.getElementById('log-call-overlay').classList.add('on');}
 function closeLogCall(){document.getElementById('log-call-overlay').classList.remove('on');}
 
@@ -963,12 +1057,14 @@ function obadge(o){return`<span style="width:22px;height:22px;border-radius:50%;
 // ── RENDER ────────────────────────────────────────────────────────────────────
 function renderOverview(){
   const q=(document.getElementById('ov-search')||{value:''}).value.trim().toLowerCase();
+  const fv=(document.getElementById('ov-folder')||{value:''}).value; // e.g. '5a', '5b', '5c'
+  const folderFilter=j=>!fv||(j.folder||'').toLowerCase().startsWith(fv);
   const dtc={overdue:'r',week:'a',ok:'b'};
   const dc={overdue:'dr',week:'da',ok:'dg'};
   const folderTag=f=>f?`<span style="font-size:10px;background:#e8f0fe;color:#1a56db;border-radius:3px;padding:1px 5px;margin-left:6px;font-weight:500">${f}</span>`:'';
   const mkLi=j=>`<li class="ji" onclick="openJob('${j.id}')"><div class="dot ${dc[j.status]}"></div><div style="flex:1"><div class="jname">${j.cb} – ${j.proj} <span style="font-weight:400;color:var(--text-secondary)">· ${j.con}</span>${folderTag(j.folder)}</div><div class="jdesc">${j.nextAct}</div></div><div class="jdate ${dtc[j.status]}">${j.nextDate?j.nextDate.slice(0,5):''}</div></li>`;
   if(q){
-    const matches=jobs.filter(j=>(j.cb+' '+j.proj+' '+j.con+' '+(j.nextAct||'')+' '+(j.contact||'')).toLowerCase().includes(q))
+    const matches=jobs.filter(j=>folderFilter(j)&&(j.cb+' '+j.proj+' '+j.con+' '+(j.nextAct||'')+' '+(j.contact||'')).toLowerCase().includes(q))
       .sort((a,b)=>dateSortVal(a.nextDate)-dateSortVal(b.nextDate));
     document.getElementById('ov-search-results').style.display='block';
     document.getElementById('ov-columns').style.display='none';
@@ -978,13 +1074,14 @@ function renderOverview(){
   }
   document.getElementById('ov-search-results').style.display='none';
   document.getElementById('ov-columns').style.display='grid';
-  const ov=jobs.filter(j=>j.status==='overdue').sort((a,b)=>dateSortVal(a.nextDate)-dateSortVal(b.nextDate));
-  const wk=jobs.filter(j=>j.status==='week').sort((a,b)=>dateSortVal(a.nextDate)-dateSortVal(b.nextDate));
-  const ok=jobs.filter(j=>j.status==='ok').sort((a,b)=>dateSortVal(a.nextDate)-dateSortVal(b.nextDate)).slice(0,10);
+  const visibleJobs=jobs.filter(folderFilter);
+  const ov=visibleJobs.filter(j=>j.status==='overdue').sort((a,b)=>dateSortVal(a.nextDate)-dateSortVal(b.nextDate));
+  const wk=visibleJobs.filter(j=>j.status==='week').sort((a,b)=>dateSortVal(a.nextDate)-dateSortVal(b.nextDate));
+  const ok=visibleJobs.filter(j=>j.status==='ok').sort((a,b)=>dateSortVal(a.nextDate)-dateSortVal(b.nextDate)).slice(0,10);
   document.getElementById('ov-overdue').innerHTML=ov.map(mkLi).join('');
   document.getElementById('ov-week').innerHTML=wk.map(mkLi).join('');
   document.getElementById('ov-ok').innerHTML=ok.map(mkLi).join('');
-  document.getElementById('badge-ok').textContent=jobs.filter(j=>j.status==='ok').length+' jobs';
+  document.getElementById('badge-ok').textContent=visibleJobs.filter(j=>j.status==='ok').length+' jobs';
   const chaseProjs=futOpps.flatMap(o=>o.projects.filter(p=>p.nextDate)).filter(p=>{const s=calcStatus(p.nextDate);return s==='overdue'||s==='week';}).sort((a,b)=>dateSortVal(a.nextDate)-dateSortVal(b.nextDate));
   const board=document.getElementById('fut-chaseboard');
   if(chaseProjs.length){
