@@ -279,6 +279,10 @@
         <ul class="jlist" id="ov-search-list"></ul>
       </div>
     </div>
+    <div class="card" id="ov-pricing-card" style="display:none;margin-bottom:14px;border-left:3px solid #7F77DD">
+      <div class="card-hdr"><span class="card-title">Being Priced / Ready to Review</span><span class="bdg" style="background:#eeedfe;color:#3c3489" id="badge-pricing">0</span></div>
+      <ul class="jlist" id="ov-pricing"></ul>
+    </div>
     <div id="ov-columns" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px">
       <div class="card">
         <div class="card-hdr"><span class="card-title">Overdue</span><span class="bdg bdg-r" id="badge-overdue">0 overdue</span></div>
@@ -302,7 +306,7 @@
   <div id="c-pipeline" class="pg">
     <div class="sbar">
       <input id="ps" placeholder="Search contractor or project..." oninput="filterPipe()">
-      <select id="pst" onchange="filterPipe()"><option value="">All stages</option><option>To be tendered</option><option>Being priced</option><option>Hit list</option><option>Returned Take Off</option><option>Returned Bill</option><option>Secured</option></select>
+      <select id="pst" onchange="filterPipe()"><option value="">All stages</option><option>Tenders Waiting For</option><option>Ready to Review</option><option>Being Priced</option><option>Returned Take Off</option><option>Returned Bill</option><option>Secured</option><option>Declined</option></select>
       <select id="pow" onchange="filterPipe()"><option value="">All owners</option><option>TC</option><option>SO</option><option>JS</option><option>RL</option><option>DML</option></select>
       <button class="btn btn-primary" onclick="openNewJob()">+ Add job</button>
     </div>
@@ -531,7 +535,7 @@
         <button class="btn" style="font-size:11px" onclick="toggleEditForm()">&#9998; Edit job details (stage / owner / contact)</button>
       </div>
       <div class="add-comm-box" id="edit-form" style="display:none;margin-top:8px">
-        <div class="form-row"><label>Stage</label><select id="edit-stage"><option>To be tendered</option><option>Being priced</option><option>Hit list</option><option>Returned Take Off</option><option>Returned Bill</option><option>Secured</option></select></div>
+        <div class="form-row"><label>Stage</label><select id="edit-stage"><option>Tenders Waiting For</option><option>Ready to Review</option><option>Being Priced</option><option>Returned Take Off</option><option>Returned Bill</option><option>Secured</option><option>Declined</option></select></div>
         <div class="form-grid" style="margin-bottom:10px">
           <div class="form-row" style="margin:0"><label>Owner</label><select id="edit-owner"><option>TC</option><option>SO</option><option>JS</option><option>RL</option><option>DML</option></select></div>
           <div class="form-row" style="margin:0"><label>Contact</label><input type="text" id="edit-contact"></div>
@@ -596,7 +600,7 @@
       <div class="form-row"><label>Contractor</label><input type="text" id="nj-con" placeholder="e.g. Lovell"></div>
       <div class="form-row"><label>Project name</label><input type="text" id="nj-proj" placeholder="e.g. Westfield Road Phase 2"></div>
       <div class="form-grid">
-        <div class="form-row"><label>Stage</label><select id="nj-stage"><option>To be tendered</option><option>Being priced</option><option>Hit list</option><option>Returned Take Off</option><option>Returned Bill</option><option>Secured</option></select></div>
+        <div class="form-row"><label>Stage</label><select id="nj-stage"><option>Tenders Waiting For</option><option>Ready to Review</option><option>Being Priced</option><option>Returned Take Off</option><option>Returned Bill</option><option>Secured</option><option>Declined</option></select></div>
         <div class="form-row"><label>Status</label><select id="nj-status"><option value="ok">On track</option><option value="week">Due soon</option><option value="overdue">Overdue</option></select></div>
       </div>
       <div class="form-grid">
@@ -1096,7 +1100,7 @@ function statusLabel(s){return s==='overdue'?'Overdue':s==='week'?'Due soon':'On
 // ── UTILITIES ─────────────────────────────────────────────────────────────────
 const OC={TC:'#E6F1FB',SO:'#E1F5EE',JS:'#FAEEDA',RL:'#FBEAF0',DML:'#F1EFE8'};
 const OT={TC:'#0C447C',SO:'#085041',JS:'#633806',RL:'#72243E',DML:'#444441'};
-const SP={'To be tendered':'ps','Being priced':'pp','Hit list':'pg','Returned Take Off':'pb','Returned Bill':'pb','Secured':'pg2','Submitted':'ps','BOQ Submitted':'pb','Being Priced':'pp','PCSA':'pg2','Returned Take-Off':'pp'};
+const SP={'Tenders Waiting For':'ps','Ready to Review':'pa','Being Priced':'pp','Returned Take Off':'pb','Returned Bill':'pb','Secured':'pg2','Declined':'pr','Submitted':'ps','BOQ Submitted':'pb','Being priced':'pp','Hit list':'pg','PCSA':'pg2','Returned Take-Off':'pp'};
 const SC={overdue:['pr','Overdue'],week:['pb','Due soon'],ok:['pp','On track']};
 const TC2={call:'#378add',email:'#1D9E75',note:'#888780'};
 const TLbl={call:'Call',email:'Email',note:'Note'};
@@ -1126,14 +1130,23 @@ function renderOverview(){
   }
   document.getElementById('ov-search-results').style.display='none';
   document.getElementById('ov-columns').style.display='grid';
+  const pricingStages=['Being Priced','Ready to Review'];
   const visibleJobs=jobs.filter(folderFilter);
-  const ov=visibleJobs.filter(j=>j.status==='overdue').sort((a,b)=>dateSortVal(a.nextDate)-dateSortVal(b.nextDate));
-  const wk=visibleJobs.filter(j=>j.status==='week').sort((a,b)=>dateSortVal(a.nextDate)-dateSortVal(b.nextDate));
-  const ok=visibleJobs.filter(j=>j.status==='ok').sort((a,b)=>dateSortVal(a.nextDate)-dateSortVal(b.nextDate)).slice(0,10);
+  const pricingJobs=visibleJobs.filter(j=>pricingStages.includes(j.stage)).sort((a,b)=>dateSortVal(a.nextDate)-dateSortVal(b.nextDate));
+  const chaseJobs=visibleJobs.filter(j=>!pricingStages.includes(j.stage));
+  const pricingCard=document.getElementById('ov-pricing-card');
+  if(pricingJobs.length){
+    pricingCard.style.display='block';
+    document.getElementById('badge-pricing').textContent=pricingJobs.length;
+    document.getElementById('ov-pricing').innerHTML=pricingJobs.map(mkLi).join('');
+  }else{pricingCard.style.display='none';}
+  const ov=chaseJobs.filter(j=>j.status==='overdue').sort((a,b)=>dateSortVal(a.nextDate)-dateSortVal(b.nextDate));
+  const wk=chaseJobs.filter(j=>j.status==='week').sort((a,b)=>dateSortVal(a.nextDate)-dateSortVal(b.nextDate));
+  const ok=chaseJobs.filter(j=>j.status==='ok').sort((a,b)=>dateSortVal(a.nextDate)-dateSortVal(b.nextDate)).slice(0,10);
   document.getElementById('ov-overdue').innerHTML=ov.map(mkLi).join('');
   document.getElementById('ov-week').innerHTML=wk.map(mkLi).join('');
   document.getElementById('ov-ok').innerHTML=ok.map(mkLi).join('');
-  document.getElementById('badge-ok').textContent=visibleJobs.filter(j=>j.status==='ok').length+' jobs';
+  document.getElementById('badge-ok').textContent=chaseJobs.filter(j=>j.status==='ok').length+' jobs';
   const chaseProjs=futOpps.flatMap(o=>o.projects.filter(p=>p.nextDate)).filter(p=>{const s=calcStatus(p.nextDate);return s==='overdue'||s==='week';}).sort((a,b)=>dateSortVal(a.nextDate)-dateSortVal(b.nextDate));
   const board=document.getElementById('fut-chaseboard');
   if(chaseProjs.length){
@@ -1337,7 +1350,7 @@ function filterFuture(){
   renderFuture(futOpps.filter(c=>(!s||c.contractor.toLowerCase().includes(s)||c.projects.some(p=>p.name.toLowerCase().includes(s)))&&(!t||c.timing===t)));
 }
 
-const JOB_STAGES=['To be tendered','Being priced','Hit list','Returned Take Off','Returned Bill','Secured'];
+const JOB_STAGES=['Tenders Waiting For','Ready to Review','Being Priced','Returned Take Off','Returned Bill','Secured','Declined'];
 function buildInfoHtml(jobId,statusOverride){
   const j=jobs.find(x=>x.id===jobId);if(!j)return'';
   const s=statusOverride||j.status;
