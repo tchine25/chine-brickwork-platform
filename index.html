@@ -644,7 +644,7 @@
     </div>
     <div class="modal-body">
       <div class="form-row"><label>Contractor</label>
-        <input type="text" id="no-con" placeholder="e.g. Galliford Try" list="no-con-list" autocomplete="off">
+        <input type="text" id="no-con" placeholder="e.g. Galliford Try" list="no-con-list" autocomplete="off" oninput="updateOppContactDropdown()">
         <datalist id="no-con-list"></datalist>
       </div>
       <div class="form-row"><label>Project name</label><input type="text" id="no-proj" placeholder="e.g. King Street Phase 2"></div>
@@ -655,6 +655,9 @@
         <div class="form-row"><label>Owner</label>
           <select id="no-owner"><option>TC</option><option>SO</option><option>JS</option><option>RL</option><option>DML</option></select>
         </div>
+      </div>
+      <div class="form-row"><label>Contact</label>
+        <select id="no-contact" style="width:100%"><option value="">— type contractor name first —</option></select>
       </div>
       <div class="form-row"><label>Detail</label><input type="text" id="no-detail" placeholder="e.g. Awaiting tender, Future pipeline"></div>
       <div class="form-grid">
@@ -1038,16 +1041,28 @@ function openNewJob(){document.getElementById('new-job-overlay').classList.add('
 function closeNewJob(){document.getElementById('new-job-overlay').classList.remove('on');document.getElementById('nj-err').textContent='';}
 
 function openNewOpp(){
-  // populate contractor datalist from existing futOpps
+  // populate contractor datalist from existing contractors + futOpps
   const dl=document.getElementById('no-con-list');
-  dl.innerHTML=futOpps.map(o=>`<option value="${o.contractor}">`).join('');
+  const names=new Set([...contractors.map(c=>c.name),...futOpps.map(o=>o.contractor)]);
+  dl.innerHTML=[...names].sort().map(n=>`<option value="${n}">`).join('');
   document.getElementById('no-con').value='';
   document.getElementById('no-proj').value='';
   document.getElementById('no-detail').value='';
   document.getElementById('no-action').value='Monitor';
   document.getElementById('no-date').value='';
   document.getElementById('no-err').textContent='';
+  document.getElementById('no-contact').innerHTML='<option value="">— type contractor name first —</option>';
   document.getElementById('new-opp-overlay').classList.add('on');
+}
+function updateOppContactDropdown(){
+  const conName=document.getElementById('no-con').value.trim().toLowerCase();
+  const sel=document.getElementById('no-contact');
+  if(!conName){sel.innerHTML='<option value="">— type contractor name first —</option>';return;}
+  const matched=contractors.find(c=>c.name.toLowerCase()===conName)||contractors.find(c=>c.name.toLowerCase().includes(conName));
+  if(!matched){sel.innerHTML='<option value="">— no contacts found —</option>';return;}
+  const contacts=contractorContacts.filter(c=>c.contractor_id===matched.id);
+  if(!contacts.length){sel.innerHTML='<option value="">— no contacts on record —</option>';return;}
+  sel.innerHTML='<option value="">— select contact —</option>'+contacts.map(c=>`<option value="${c.name}${c.role?' · '+c.role:''}">${c.name}${c.role?' · '+c.role:''}${c.is_primary?' ★':''}</option>`).join('');
 }
 function closeNewOpp(){document.getElementById('new-opp-overlay').classList.remove('on');}
 
@@ -1058,6 +1073,7 @@ async function saveNewOpp(){
   if(!proj){document.getElementById('no-err').textContent='Project name is required';return;}
   const timing=document.getElementById('no-timing').value;
   const owner=document.getElementById('no-owner').value;
+  const contact=document.getElementById('no-contact').value.trim();
   const detail=document.getElementById('no-detail').value.trim();
   const action=document.getElementById('no-action').value.trim()||'Monitor';
   const nextDate=document.getElementById('no-date').value.trim();
@@ -1082,6 +1098,7 @@ async function saveNewOpp(){
     timing,
     next_date:nextDate||null,
     owner,
+    contact:contact||null,
   });
   if(pe){document.getElementById('no-err').textContent=pe.message;return;}
   closeNewOpp();
