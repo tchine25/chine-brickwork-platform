@@ -1777,17 +1777,32 @@ function openContractor(id){
 }
 function closeContractor(){document.getElementById('contractor-overlay').style.display='none';}
 function renderContractorContacts(contacts){
-  document.getElementById('co-contacts').innerHTML=contacts.length?contacts.map(ct=>`
-    <div class="cl-contact-row">
-      <div style="flex:1">
-        <div style="font-weight:500;font-size:13px">${ct.name}${ct.is_primary?' <span style="font-size:10px;background:#e1f5ee;color:#085041;padding:1px 5px;border-radius:3px;margin-left:4px">Primary</span>':''}</div>
-        ${ct.role?`<div style="font-size:12px;color:var(--text-secondary)">${ct.role}</div>`:''}
-        ${ct.email?`<a href="mailto:${ct.email}" style="font-size:12px;color:var(--navy);display:block">${ct.email}</a>`:''}
-        ${ct.phone?`<div style="font-size:12px;color:var(--text-secondary)">${ct.phone}</div>`:''}
-      </div>
-      <button onclick="deleteContact('${ct.id}')" style="font-size:10px;color:var(--danger-txt);background:none;border:none;cursor:pointer;padding:4px;opacity:0.7">✕ remove</button>
-    </div>`).join('')
-  :'<div style="color:var(--text-secondary);font-size:12px;padding:8px 0">No contacts added yet.</div>';
+  if(!contacts.length){
+    document.getElementById('co-contacts').innerHTML='<div style="color:var(--text-secondary);font-size:12px;padding:8px 0">No contacts added yet.</div>';
+    return;
+  }
+  document.getElementById('co-contacts').innerHTML=`
+    <table style="width:100%;border-collapse:collapse;font-size:12px">
+      <thead><tr style="border-bottom:2px solid var(--border)">
+        <th style="padding:6px 8px;text-align:left;font-size:11px;color:var(--text-secondary);font-weight:500">Name</th>
+        <th style="padding:6px 8px;text-align:left;font-size:11px;color:var(--text-secondary);font-weight:500">Role</th>
+        <th style="padding:6px 8px;text-align:left;font-size:11px;color:var(--text-secondary);font-weight:500">Email</th>
+        <th style="padding:6px 8px;text-align:left;font-size:11px;color:var(--text-secondary);font-weight:500">Phone</th>
+        <th style="padding:6px 8px;text-align:left;font-size:11px;color:var(--text-secondary);font-weight:500">Linked jobs</th>
+        <th style="padding:6px 8px"></th>
+      </tr></thead>
+      <tbody>${contacts.map(ct=>{
+        const linkedJobs=jobs.filter(j=>j.contactId===ct.id);
+        return`<tr style="border-bottom:1px solid var(--border)">
+          <td style="padding:8px;font-weight:500;white-space:nowrap">${ct.name}${ct.is_primary?'&nbsp;<span style="font-size:10px;background:#e1f5ee;color:#085041;padding:1px 5px;border-radius:3px">Primary</span>':''}</td>
+          <td style="padding:8px;color:var(--text-secondary)">${ct.role||'—'}</td>
+          <td style="padding:8px">${ct.email?`<a href="mailto:${ct.email}" style="color:var(--navy)">${ct.email}</a>`:'—'}</td>
+          <td style="padding:8px;color:var(--text-secondary);white-space:nowrap">${ct.phone||'—'}</td>
+          <td style="padding:8px">${linkedJobs.length?linkedJobs.map(j=>`<span onclick="closeContractor();openJob('${j.id}')" style="display:inline-block;margin:1px 3px 1px 0;padding:1px 7px;background:#e8f0fe;color:#1a56db;border-radius:3px;font-size:11px;cursor:pointer;font-weight:500">${j.cb}</span>`).join(''):'<span style="color:var(--text-secondary)">—</span>'}</td>
+          <td style="padding:8px;text-align:right"><button onclick="deleteContact('${ct.id}')" style="font-size:10px;color:var(--danger-txt);background:none;border:none;cursor:pointer;opacity:0.7;white-space:nowrap">✕ remove</button></td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>`;
 }
 async function saveContractorEdit(){
   if(!_currentContractorId)return;
