@@ -521,7 +521,8 @@
           <div class="form-row" style="margin:0"><label>Next action</label><input type="text" id="edit-next-act" placeholder="What needs to happen?"></div>
           <div class="form-row" style="margin:0"><label>Action by</label><select id="edit-next-who"><option value="">—</option><option value="TC">TC</option><option value="SO">SO</option><option value="JS">JS</option><option value="RL">RL</option><option value="DML">DML</option></select></div>
         </div>
-        <div style="display:flex;justify-content:flex-end;margin-top:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px">
+          <button class="btn" onclick="archiveJob()" style="font-size:12px;color:var(--danger-txt);border-color:var(--danger-txt)">Archive job</button>
           <button class="btn btn-primary" onclick="saveCommAndUpdate()" style="background:var(--teal);border-color:var(--teal)">Save to log</button>
         </div>
       </div>
