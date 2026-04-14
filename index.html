@@ -516,6 +516,26 @@
           <button class="btn btn-primary" onclick="saveJobUpdate()">Save changes</button>
         </div>
       </div>
+      <!-- Contacts section -->
+      <div style="margin-top:14px;display:flex;align-items:center;justify-content:space-between">
+        <div class="slbl" style="margin:0">Contacts <span id="job-contacts-co" style="font-weight:400;font-size:11px;color:var(--text-secondary)"></span></div>
+        <button class="btn" style="font-size:11px;padding:3px 10px" onclick="toggleJobAddContact()">+ Add contact</button>
+      </div>
+      <div id="job-contacts-list" style="margin-top:6px"></div>
+      <div id="job-add-contact-form" style="display:none;margin-top:8px;padding:12px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--bg-secondary)">
+        <div class="form-grid">
+          <div class="form-row" style="margin:0"><label>Name</label><input type="text" id="jc-name" placeholder="e.g. Ryan Manning"></div>
+          <div class="form-row" style="margin:0"><label>Role</label><input type="text" id="jc-role" placeholder="e.g. Quantity Surveyor"></div>
+        </div>
+        <div class="form-grid" style="margin-top:8px">
+          <div class="form-row" style="margin:0"><label>Email</label><input type="email" id="jc-email" placeholder="ryan@example.com"></div>
+          <div class="form-row" style="margin:0"><label>Phone</label><input type="text" id="jc-phone" placeholder="07700 000000"></div>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+          <button class="btn" style="font-size:11px" onclick="toggleJobAddContact()">Cancel</button>
+          <button class="btn btn-primary" style="font-size:11px" onclick="saveJobContact()">Save contact</button>
+        </div>
+      </div>
       <!-- Communication history -->
       <div class="slbl" style="margin-top:16px">Communication history</div>
       <ul class="tl" id="m-tl"></ul>
@@ -1337,6 +1357,8 @@ function openJob(id){
     const body=encodeURIComponent(`Hi,\n\nI'm following up on ${j.proj}.\n\n${j.nextAct}\n\nKind regards,\nChine Brickwork`);
     const a=document.createElement('a');a.href=`mailto:?subject=${subject}&body=${body}`;document.body.appendChild(a);a.click();document.body.removeChild(a);
   };
+  document.getElementById('job-add-contact-form').style.display='none';
+  renderJobContacts(j.con);
   document.getElementById('overlay').classList.add('on');
 }
 function closeMod(e){if(e.target===document.getElementById('overlay'))document.getElementById('overlay').classList.remove('on');}
@@ -1345,6 +1367,73 @@ async function deleteComm(commId,jobId){
   await sb.from('comms').delete().eq('id',commId);
   const job=jobs.find(j=>j.id===jobId);
   if(job){job.comms=job.comms.filter(c=>c.id!==commId);renderJobTimeline(job);}
+}
+
+let _jobContactorId=null;
+async function renderJobContacts(conName){
+  const listEl=document.getElementById('job-contacts-list');
+  const subEl=document.getElementById('job-contacts-co');
+  // match contractor by name (case-insensitive)
+  const con=contractors.find(c=>c.name.trim().toLowerCase()===conName.trim().toLowerCase());
+  if(!con){
+    // try a live DB lookup in case clients tab hasn't been loaded yet
+    const {data:cr}=await sb.from('contractors').select('*').ilike('name',conName.trim());
+    if(!cr||!cr.length){
+      _jobContactorId=null;
+      subEl.textContent='';
+      listEl.innerHTML='<div style="font-size:12px;color:var(--text-secondary);padding:4px 0">No master record for this contractor yet. <a href="#" onclick="switchModule(\'clients\');return false;" style="color:var(--navy)">Add in Clients</a>.</div>';
+      return;
+    }
+    contractors.push(...cr.filter(r=>!contractors.find(x=>x.id===r.id)));
+    _jobContactorId=cr[0].id;
+    subEl.textContent='— '+cr[0].name;
+  } else {
+    _jobContactorId=con.id;
+    subEl.textContent='— '+con.name;
+  }
+  // fetch contacts fresh
+  const {data:contacts}=await sb.from('contractor_contacts').select('*').eq('contractor_id',_jobContactorId).order('is_primary',{ascending:false}).order('name');
+  // refresh local cache
+  contractorContacts=contractorContacts.filter(c=>c.contractor_id!==_jobContactorId).concat(contacts||[]);
+  if(!contacts||!contacts.length){
+    listEl.innerHTML='<div style="font-size:12px;color:var(--text-secondary);padding:4px 0">No contacts on record yet — add one below.</div>';
+    return;
+  }
+  listEl.innerHTML=contacts.map(ct=>`
+    <div style="padding:7px 0;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:10px">
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:500">${ct.name}${ct.is_primary?'&nbsp;<span style="font-size:10px;background:#e1f5ee;color:#085041;padding:1px 5px;border-radius:3px">Primary</span>':''}</div>
+        ${ct.role?`<div style="font-size:11px;color:var(--text-secondary)">${ct.role}</div>`:''}
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:2px">
+          ${ct.email?`<a href="mailto:${ct.email}" style="font-size:12px;color:var(--navy)">${ct.email}</a>`:''}
+          ${ct.phone?`<span style="font-size:12px;color:var(--text-secondary)">${ct.phone}</span>`:''}
+        </div>
+      </div>
+    </div>`).join('');
+}
+function toggleJobAddContact(){
+  const f=document.getElementById('job-add-contact-form');
+  const visible=f.style.display!=='none';
+  f.style.display=visible?'none':'block';
+  if(!visible){document.getElementById('jc-name').focus();}
+}
+async function saveJobContact(){
+  if(!_jobContactorId){alert('No contractor record linked — add this contractor in the Clients tab first.');return;}
+  const name=document.getElementById('jc-name').value.trim();
+  if(!name){document.getElementById('jc-name').focus();return;}
+  const {error}=await sb.from('contractor_contacts').insert({
+    contractor_id:_jobContactorId,
+    name,
+    role:document.getElementById('jc-role').value.trim()||null,
+    email:document.getElementById('jc-email').value.trim()||null,
+    phone:document.getElementById('jc-phone').value.trim()||null,
+  });
+  if(error){alert(error.message);return;}
+  ['jc-name','jc-role','jc-email','jc-phone'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('job-add-contact-form').style.display='none';
+  const jobId=document.getElementById('current-job-id').value;
+  const j=jobs.find(x=>x.id===jobId);
+  if(j)renderJobContacts(j.con);
 }
 
 async function saveCommAndUpdate(){
