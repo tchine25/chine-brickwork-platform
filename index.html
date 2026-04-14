@@ -302,7 +302,7 @@
   <div id="c-pipeline" class="pg">
     <div class="sbar">
       <input id="ps" placeholder="Search contractor or project..." oninput="filterPipe()">
-      <select id="pst" onchange="filterPipe()"><option value="">All stages</option><option>Submitted</option><option>BOQ Submitted</option><option>Being Priced</option><option>PCSA</option><option>Secured</option><option>Returned Take-Off</option></select>
+      <select id="pst" onchange="filterPipe()"><option value="">All stages</option><option>To be tendered</option><option>Being priced</option><option>Hit list</option><option>Returned Take Off</option><option>Returned Bill</option><option>Secured</option></select>
       <select id="pow" onchange="filterPipe()"><option value="">All owners</option><option>TC</option><option>SO</option><option>JS</option><option>RL</option><option>DML</option></select>
       <button class="btn btn-primary" onclick="openNewJob()">+ Add job</button>
     </div>
@@ -531,7 +531,7 @@
         <button class="btn" style="font-size:11px" onclick="toggleEditForm()">&#9998; Edit job details (stage / owner / contact)</button>
       </div>
       <div class="add-comm-box" id="edit-form" style="display:none;margin-top:8px">
-        <div class="form-row"><label>Stage</label><select id="edit-stage"><option>Submitted</option><option>BOQ Submitted</option><option>Being Priced</option><option>PCSA</option><option>Secured</option><option>Returned Take-Off</option></select></div>
+        <div class="form-row"><label>Stage</label><select id="edit-stage"><option>To be tendered</option><option>Being priced</option><option>Hit list</option><option>Returned Take Off</option><option>Returned Bill</option><option>Secured</option></select></div>
         <div class="form-grid" style="margin-bottom:10px">
           <div class="form-row" style="margin:0"><label>Owner</label><select id="edit-owner"><option>TC</option><option>SO</option><option>JS</option><option>RL</option><option>DML</option></select></div>
           <div class="form-row" style="margin:0"><label>Contact</label><input type="text" id="edit-contact"></div>
@@ -596,7 +596,7 @@
       <div class="form-row"><label>Contractor</label><input type="text" id="nj-con" placeholder="e.g. Lovell"></div>
       <div class="form-row"><label>Project name</label><input type="text" id="nj-proj" placeholder="e.g. Westfield Road Phase 2"></div>
       <div class="form-grid">
-        <div class="form-row"><label>Stage</label><select id="nj-stage"><option>Submitted</option><option>BOQ Submitted</option><option>Being Priced</option><option>PCSA</option><option>Secured</option><option>Returned Take-Off</option></select></div>
+        <div class="form-row"><label>Stage</label><select id="nj-stage"><option>To be tendered</option><option>Being priced</option><option>Hit list</option><option>Returned Take Off</option><option>Returned Bill</option><option>Secured</option></select></div>
         <div class="form-row"><label>Status</label><select id="nj-status"><option value="ok">On track</option><option value="week">Due soon</option><option value="overdue">Overdue</option></select></div>
       </div>
       <div class="form-grid">
@@ -1096,7 +1096,7 @@ function statusLabel(s){return s==='overdue'?'Overdue':s==='week'?'Due soon':'On
 // ── UTILITIES ─────────────────────────────────────────────────────────────────
 const OC={TC:'#E6F1FB',SO:'#E1F5EE',JS:'#FAEEDA',RL:'#FBEAF0',DML:'#F1EFE8'};
 const OT={TC:'#0C447C',SO:'#085041',JS:'#633806',RL:'#72243E',DML:'#444441'};
-const SP={'Submitted':'ps','BOQ Submitted':'pb','Being Priced':'pp','PCSA':'pg2','Secured':'pg2','Returned Take-Off':'pp'};
+const SP={'To be tendered':'ps','Being priced':'pp','Hit list':'pg','Returned Take Off':'pb','Returned Bill':'pb','Secured':'pg2','Submitted':'ps','BOQ Submitted':'pb','Being Priced':'pp','PCSA':'pg2','Returned Take-Off':'pp'};
 const SC={overdue:['pr','Overdue'],week:['pb','Due soon'],ok:['pp','On track']};
 const TC2={call:'#378add',email:'#1D9E75',note:'#888780'};
 const TLbl={call:'Call',email:'Email',note:'Note'};
@@ -1337,12 +1337,23 @@ function filterFuture(){
   renderFuture(futOpps.filter(c=>(!s||c.contractor.toLowerCase().includes(s)||c.projects.some(p=>p.name.toLowerCase().includes(s)))&&(!t||c.timing===t)));
 }
 
+const JOB_STAGES=['To be tendered','Being priced','Hit list','Returned Take Off','Returned Bill','Secured'];
 function buildInfoHtml(jobId,statusOverride){
   const j=jobs.find(x=>x.id===jobId);if(!j)return'';
   const s=statusOverride||j.status;
+  const stageOpts=JOB_STAGES.map(st=>`<option${j.stage===st?' selected':''}>${st}</option>`).join('');
   return`<div class="iitem"><div class="ilbl">Owner</div><div class="ival">${j.owner||'—'}</div></div>
     <div class="iitem"><div class="ilbl">Status</div><div class="ival">${pill(SC[s][0],SC[s][1])}</div></div>
+    <div class="iitem" style="grid-column:1/-1"><div class="ilbl">Stage</div><div class="ival"><select onchange="updateJobStage(this.value)" style="font-size:13px;font-weight:500;border:1px solid var(--border);border-radius:4px;padding:3px 8px;background:var(--bg-primary);color:var(--text-primary);cursor:pointer">${stageOpts}</select></div></div>
     <div class="iitem" style="grid-column:1/-1"><div class="ilbl">Contact</div><div class="ival" style="font-size:12px;font-weight:400">${j.contact||'—'}</div></div>`;
+}
+async function updateJobStage(stage){
+  const jobId=document.getElementById('current-job-id').value;
+  if(!jobId)return;
+  await sb.from('jobs').update({stage}).eq('id',jobId);
+  const j=jobs.find(x=>x.id===jobId);
+  if(j){j.stage=stage;document.getElementById('m-sub').textContent=j.con+' · '+stage;}
+  renderPipeline(jobs);
 }
 function liveStatusUpdate(dateVal){
   const jobId=document.getElementById('current-job-id').value;
