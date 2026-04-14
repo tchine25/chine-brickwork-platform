@@ -264,7 +264,7 @@
       <option>Being Priced</option>
       <option>Returned Take Off</option>
       <option>Returned Bill</option>
-      <option>Secured</option>
+      <option>MC Secured</option>
       <option>Declined</option>
     </select>
   </div>
@@ -274,7 +274,7 @@
       <div class="met"><div class="ml">Overdue</div><div class="mv r" id="cnt-overdue">—</div><div class="ms">Action now</div></div>
       <div class="met"><div class="ml">Due this week</div><div class="mv a" id="cnt-week">—</div><div class="ms">Next 7 days</div></div>
       <div class="met"><div class="ml">Active jobs</div><div class="mv b" id="cnt-active">—</div><div class="ms">In pipeline</div></div>
-      <div class="met"><div class="ml">Secured</div><div class="mv g" id="cnt-secured">—</div><div class="ms">This year</div></div>
+      <div class="met"><div class="ml">MC Secured</div><div class="mv g" id="cnt-secured">—</div><div class="ms">MC won, chasing pkg</div></div>
       <div class="met"><div class="ml">Future pipeline</div><div class="mv p" id="cnt-future">—</div><div class="ms">Tracked projects</div></div>
     </div>
     <div style="padding:10px 0 14px;display:flex;gap:10px;align-items:center">
@@ -316,7 +316,7 @@
   <div id="c-pipeline" class="pg">
     <div class="sbar">
       <input id="ps" placeholder="Search contractor or project..." oninput="filterPipe()">
-      <select id="pst" onchange="filterPipe()"><option value="">All stages</option><option>Tenders Waiting For</option><option>Ready to Review</option><option>Being Priced</option><option>Returned Take Off</option><option>Returned Bill</option><option>Secured</option><option>Declined</option></select>
+      <select id="pst" onchange="filterPipe()"><option value="">All stages</option><option>Tenders Waiting For</option><option>Ready to Review</option><option>Being Priced</option><option>Returned Take Off</option><option>Returned Bill</option><option>MC Secured</option><option>Declined</option></select>
       <select id="pow" onchange="filterPipe()"><option value="">All owners</option><option>TC</option><option>SO</option><option>JS</option><option>RL</option><option>DML</option></select>
       <button class="btn btn-primary" onclick="openNewJob()">+ Add job</button>
     </div>
@@ -545,7 +545,7 @@
         <button class="btn" style="font-size:11px" onclick="toggleEditForm()">&#9998; Edit job details (stage / owner / contact)</button>
       </div>
       <div class="add-comm-box" id="edit-form" style="display:none;margin-top:8px">
-        <div class="form-row"><label>Stage</label><select id="edit-stage"><option>Tenders Waiting For</option><option>Ready to Review</option><option>Being Priced</option><option>Returned Take Off</option><option>Returned Bill</option><option>Secured</option><option>Declined</option></select></div>
+        <div class="form-row"><label>Stage</label><select id="edit-stage"><option>Tenders Waiting For</option><option>Ready to Review</option><option>Being Priced</option><option>Returned Take Off</option><option>Returned Bill</option><option>MC Secured</option><option>Declined</option></select></div>
         <div class="form-grid" style="margin-bottom:10px">
           <div class="form-row" style="margin:0"><label>Owner</label><select id="edit-owner"><option>TC</option><option>SO</option><option>JS</option><option>RL</option><option>DML</option></select></div>
           <div class="form-row" style="margin:0"><label>Contact</label><input type="text" id="edit-contact"></div>
@@ -610,7 +610,7 @@
       <div class="form-row"><label>Contractor</label><input type="text" id="nj-con" placeholder="e.g. Lovell"></div>
       <div class="form-row"><label>Project name</label><input type="text" id="nj-proj" placeholder="e.g. Westfield Road Phase 2"></div>
       <div class="form-grid">
-        <div class="form-row"><label>Stage</label><select id="nj-stage"><option>Tenders Waiting For</option><option>Ready to Review</option><option>Being Priced</option><option>Returned Take Off</option><option>Returned Bill</option><option>Secured</option><option>Declined</option></select></div>
+        <div class="form-row"><label>Stage</label><select id="nj-stage"><option>Tenders Waiting For</option><option>Ready to Review</option><option>Being Priced</option><option>Returned Take Off</option><option>Returned Bill</option><option>MC Secured</option><option>Declined</option></select></div>
         <div class="form-row"><label>Status</label><select id="nj-status"><option value="ok">On track</option><option value="week">Due soon</option><option value="overdue">Overdue</option></select></div>
       </div>
       <div class="form-grid">
@@ -943,7 +943,7 @@ function updateMetrics(){
   document.getElementById('cnt-overdue').textContent=ov;
   document.getElementById('cnt-week').textContent=wk;
   document.getElementById('cnt-active').textContent=jobs.length;
-  document.getElementById('cnt-secured').textContent=jobs.filter(j=>j.stage==='Secured').length;
+  document.getElementById('cnt-secured').textContent=jobs.filter(j=>j.stage==='MC Secured'||j.stage==='Secured').length;
   document.getElementById('cnt-future').textContent=futTotal;
   document.getElementById('crm-badge').textContent=ov;
   document.getElementById('mkt-badge').textContent=leads.length;
@@ -1110,7 +1110,7 @@ function statusLabel(s){return s==='overdue'?'Overdue':s==='week'?'Due soon':'On
 // ── UTILITIES ─────────────────────────────────────────────────────────────────
 const OC={TC:'#E6F1FB',SO:'#E1F5EE',JS:'#FAEEDA',RL:'#FBEAF0',DML:'#F1EFE8'};
 const OT={TC:'#0C447C',SO:'#085041',JS:'#633806',RL:'#72243E',DML:'#444441'};
-const SP={'Tenders Waiting For':'ps','Ready to Review':'pa','Being Priced':'pp','Returned Take Off':'pb','Returned Bill':'pb','Secured':'pg2','Declined':'pr','Submitted':'ps','BOQ Submitted':'pb','Being priced':'pp','Hit list':'pg','PCSA':'pg2','Returned Take-Off':'pp'};
+const SP={'Tenders Waiting For':'ps','Ready to Review':'pa','Being Priced':'pp','Returned Take Off':'pb','Returned Bill':'pb','MC Secured':'pg2','Declined':'pr','Submitted':'ps','BOQ Submitted':'pb','Being priced':'pp','Hit list':'pg','PCSA':'pg2','Secured':'pg2','Returned Take-Off':'pp'};
 const SC={overdue:['pr','Overdue'],week:['pb','Due soon'],ok:['pp','On track']};
 const TC2={call:'#378add',email:'#1D9E75',note:'#888780'};
 const TLbl={call:'Call',email:'Email',note:'Note'};
@@ -1358,7 +1358,7 @@ function filterFuture(){
   renderFuture(futOpps.filter(c=>(!s||c.contractor.toLowerCase().includes(s)||c.projects.some(p=>p.name.toLowerCase().includes(s)))&&(!t||c.timing===t)));
 }
 
-const JOB_STAGES=['Tenders Waiting For','Ready to Review','Being Priced','Returned Take Off','Returned Bill','Secured','Declined'];
+const JOB_STAGES=['Tenders Waiting For','Ready to Review','Being Priced','Returned Take Off','Returned Bill','MC Secured','Declined'];
 function buildInfoHtml(jobId,statusOverride){
   const j=jobs.find(x=>x.id===jobId);if(!j)return'';
   const s=statusOverride||j.status;
