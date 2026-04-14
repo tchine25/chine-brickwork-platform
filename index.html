@@ -246,13 +246,25 @@
 
 <!-- CRM MODULE -->
 <div id="mod-crm" class="module on">
-  <div class="subnav">
-    <div class="snt on" onclick="sp('crm','c-overview',this)">Overview</div>
-    <div class="snt" onclick="sp('crm','c-pipeline',this)">Pipeline</div>
-    <div class="snt" onclick="sp('crm','c-actions',this)">All actions</div>
-    <div class="snt" onclick="sp('crm','c-log',this)">Call log</div>
-    <div class="snt" onclick="sp('crm','c-future',this)">Future opportunities</div>
-    <div class="snt" onclick="sp('crm','c-archive',this);loadArchive()">Archive <span class="count-badge" id="archive-badge" style="background:#e5e5e5;color:#666;margin-left:4px"></span></div>
+  <div class="subnav" style="justify-content:space-between;align-items:center">
+    <div style="display:flex;gap:3px">
+      <div class="snt on" onclick="sp('crm','c-overview',this)">Overview</div>
+      <div class="snt" onclick="sp('crm','c-pipeline',this)">Pipeline</div>
+      <div class="snt" onclick="sp('crm','c-actions',this)">All actions</div>
+      <div class="snt" onclick="sp('crm','c-log',this)">Call log</div>
+      <div class="snt" onclick="sp('crm','c-future',this)">Future opportunities</div>
+      <div class="snt" onclick="sp('crm','c-archive',this);loadArchive()">Archive <span class="count-badge" id="archive-badge" style="background:#e5e5e5;color:#666;margin-left:4px"></span></div>
+    </div>
+    <select id="ov-stage-filter" onchange="renderOverview()" style="font-size:12px;padding:5px 10px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--bg-primary);color:var(--text-primary);cursor:pointer">
+      <option value="">All stages</option>
+      <option>Tenders Waiting For</option>
+      <option>Ready to Review</option>
+      <option>Being Priced</option>
+      <option>Returned Take Off</option>
+      <option>Returned Bill</option>
+      <option>Secured</option>
+      <option>Declined</option>
+    </select>
   </div>
 
   <div id="c-overview" class="pg on">
@@ -1113,8 +1125,9 @@ function obadge(o){return`<span style="width:22px;height:22px;border-radius:50%;
 // ── RENDER ────────────────────────────────────────────────────────────────────
 function renderOverview(){
   const q=(document.getElementById('ov-search')||{value:''}).value.trim().toLowerCase();
-  const fv=(document.getElementById('ov-folder')||{value:''}).value; // e.g. '5a', '5b', '5c'
-  const folderFilter=j=>!fv||(j.folder||'').toLowerCase().startsWith(fv);
+  const fv=(document.getElementById('ov-folder')||{value:''}).value;
+  const sv=(document.getElementById('ov-stage-filter')||{value:''}).value;
+  const folderFilter=j=>(!fv||(j.folder||'').toLowerCase().startsWith(fv))&&(!sv||j.stage===sv);
   const dtc={overdue:'r',week:'a',ok:'b'};
   const dc={overdue:'dr',week:'da',ok:'dg'};
   const folderTag=f=>f?`<span style="font-size:10px;background:#e8f0fe;color:#1a56db;border-radius:3px;padding:1px 5px;margin-left:6px;font-weight:500">${f}</span>`:'';
