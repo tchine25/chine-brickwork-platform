@@ -550,6 +550,10 @@
           <div class="form-row" style="margin:0"><label>Owner</label><select id="edit-owner"><option>TC</option><option>SO</option><option>JS</option><option>RL</option><option>DML</option></select></div>
           <div class="form-row" style="margin:0"><label>Contact</label><input type="text" id="edit-contact"></div>
         </div>
+        <div class="form-grid" style="margin-bottom:10px">
+          <div class="form-row" style="margin:0"><label>Expected BW Start (DD/MM/YY)</label><input type="text" id="edit-bw-start" placeholder="e.g. 01/09/26"></div>
+          <div class="form-row" style="margin:0"><label>Tender Value (£)</label><input type="text" id="edit-tender-value" placeholder="e.g. 450,000"></div>
+        </div>
         <div style="display:flex;gap:8px;justify-content:flex-end">
           <button class="btn" onclick="toggleEditForm()">Cancel</button>
           <button class="btn btn-primary" onclick="saveJobUpdate()">Save changes</button>
@@ -900,7 +904,7 @@ async function loadData(){
 
   jobs=(jr.data||[]).map(j=>({
     id:j.id,cb:j.cb,con:j.con,proj:j.proj,stage:j.stage,owner:j.owner,folder:j.folder||'',
-    nextDate:j.next_date,nextAct:j.next_act,nextActWho:j.next_act_who||'',status:calcStatus(j.next_date),contact:j.contact,contactId:j.contact_id||null,
+    nextDate:j.next_date,nextAct:j.next_act,nextActWho:j.next_act_who||'',status:calcStatus(j.next_date),contact:j.contact,contactId:j.contact_id||null,bwStartDate:j.bw_start_date||'',tenderValue:j.tender_value||'',
     comms:(cr.data||[]).filter(c=>c.job_id===j.id).map(c=>({id:c.id,d:c.d,who:c.who,type:c.type,text:c.text}))
   }));
   leads=(lr.data||[]).map(l=>({id:l.id,title:l.title,src:l.src,val:l.val,loc:l.loc,deadline:l.deadline,hot:l.hot,desc:l.description,url:l.url}));
@@ -985,6 +989,8 @@ async function saveJobUpdate(){
     stage:document.getElementById('edit-stage').value,
     owner:document.getElementById('edit-owner').value,
     contact:document.getElementById('edit-contact').value,
+    bw_start_date:document.getElementById('edit-bw-start').value.trim()||null,
+    tender_value:document.getElementById('edit-tender-value').value.trim()||null,
   }).eq('id',jobId);
   document.getElementById('edit-form').style.display='none';
   await loadData();
@@ -1366,6 +1372,8 @@ function buildInfoHtml(jobId,statusOverride){
   return`<div class="iitem"><div class="ilbl">Owner</div><div class="ival">${j.owner||'—'}</div></div>
     <div class="iitem"><div class="ilbl">Status</div><div class="ival">${pill(SC[s][0],SC[s][1])}</div></div>
     <div class="iitem" style="grid-column:1/-1"><div class="ilbl">Stage</div><div class="ival"><select onchange="updateJobStage(this.value)" style="font-size:13px;font-weight:500;border:1px solid var(--border);border-radius:4px;padding:3px 8px;background:var(--bg-primary);color:var(--text-primary);cursor:pointer">${stageOpts}</select></div></div>
+    <div class="iitem"><div class="ilbl">BW Start Date</div><div class="ival">${j.bwStartDate||'—'}</div></div>
+    <div class="iitem"><div class="ilbl">Tender Value</div><div class="ival">${j.tenderValue?'£'+j.tenderValue:'—'}</div></div>
     <div class="iitem" style="grid-column:1/-1"><div class="ilbl">Contact</div><div class="ival" style="font-size:12px;font-weight:400">${j.contact||'—'}</div></div>`;
 }
 async function updateJobStage(stage){
@@ -1442,6 +1450,8 @@ function openJob(id){
   document.getElementById('edit-stage').value=j.stage||'Submitted';
   document.getElementById('edit-owner').value=j.owner||'TC';
   document.getElementById('edit-contact').value=j.contact||'';
+  document.getElementById('edit-bw-start').value=j.bwStartDate||'';
+  document.getElementById('edit-tender-value').value=j.tenderValue||'';
   document.getElementById('m-title').textContent=j.cb+' – '+j.proj;
   document.getElementById('m-sub').textContent=j.con+' · '+j.stage;
   document.getElementById('m-info').innerHTML=buildInfoHtml(id);
