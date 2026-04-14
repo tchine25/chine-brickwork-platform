@@ -226,6 +226,10 @@
     <div class="date-badge" id="today-date"></div>
     <span id="user-badge" style="font-size:11px;color:var(--text-secondary);background:var(--bg-secondary);padding:4px 10px;border-radius:var(--radius-md);border:1px solid var(--border)"></span>
     <button class="btn btn-primary" onclick="morningBriefing()">Morning briefing</button>
+    <button class="btn" id="voice-log-btn" onclick="openVoiceLog()" title="Voice log a job update" style="display:flex;align-items:center;gap:6px;padding:6px 12px">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="9" y1="22" x2="15" y2="22"/></svg>
+      Voice log
+    </button>
     <button class="btn" onclick="doLogout()">Sign out</button>
   </div>
 </div>
@@ -529,7 +533,7 @@
           <div class="form-row" style="margin:0"><label>Type</label><select id="comm-type"><option value="call">Call</option><option value="email">Email</option><option value="note">Note</option></select></div>
           <div class="form-row" style="margin:0"><label>Logged by</label><select id="comm-who"><option value="TC">TC — Tim Chase</option><option value="SO">SO — Scott Oldroyd</option><option value="JS">JS — Jinal Shah</option><option value="RL">RL</option><option value="DML">DML</option></select></div>
         </div>
-        <div class="form-row"><label>What happened / what was discussed</label><textarea id="comm-text" placeholder="e.g. Called, no answer. Left voicemail and sent email..."></textarea></div>
+        <div class="form-row" style="position:relative"><label style="display:flex;align-items:center;justify-content:space-between">What happened / what was discussed <button onclick="startInlineVoice()" id="inline-mic-btn" title="Dictate note" style="background:none;border:none;cursor:pointer;padding:2px 4px;color:var(--text-secondary);display:flex;align-items:center;gap:4px;font-size:11px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="9" y1="22" x2="15" y2="22"/></svg> Dictate</button></label><textarea id="comm-text" placeholder="e.g. Called, no answer. Left voicemail and sent email..."></textarea></div>
         <div style="display:grid;grid-template-columns:130px 1fr 110px;gap:8px;margin-top:6px">
           <div class="form-row" style="margin:0"><label>Next action date</label><input type="text" id="edit-next-date" placeholder="DD/MM/YY" oninput="liveStatusUpdate(this.value)"></div>
           <div class="form-row" style="margin:0"><label>Next action</label><input type="text" id="edit-next-act" placeholder="What needs to happen?"></div>
@@ -1957,7 +1961,243 @@ async function deleteContact(contactId){
 }
 
 init();
+
+// ── VOICE LOG ─────────────────────────────────────────────────────────────────
+
+let _voiceRecognition = null;
+let _voiceListening = false;
+let _inlineVoiceRecognition = null;
+let _inlineVoiceListening = false;
+
+function _buildRecognition(onResult, onEnd) {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return null;
+  const r = new SR();
+  r.continuous = true;
+  r.interimResults = true;
+  r.lang = 'en-GB';
+  r.onresult = onResult;
+  r.onend = onEnd;
+  r.onerror = e => { if (e.error !== 'aborted') console.warn('Voice error:', e.error); };
+  return r;
+}
+
+// ── Global voice log (from topbar) — asks for CB + update ───────────────────
+
+function openVoiceLog() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    alert('Voice recognition is only available in Chrome or Edge. Please use one of those browsers.');
+    return;
+  }
+  document.getElementById('vl-transcript').textContent = '';
+  document.getElementById('vl-status').textContent = 'Press the mic button and speak';
+  document.getElementById('vl-result').style.display = 'none';
+  document.getElementById('vl-overlay').style.display = 'flex';
+}
+
+function closeVoiceLog() {
+  stopVoiceListening();
+  document.getElementById('vl-overlay').style.display = 'none';
+}
+
+function toggleVoiceListening() {
+  if (_voiceListening) {
+    stopVoiceListening();
+  } else {
+    startVoiceListening();
+  }
+}
+
+function startVoiceListening() {
+  document.getElementById('vl-transcript').textContent = '';
+  document.getElementById('vl-result').style.display = 'none';
+
+  _voiceRecognition = _buildRecognition(
+    e => {
+      let interim = '', final = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const t = e.results[i][0].transcript;
+        if (e.results[i].isFinal) final += t;
+        else interim += t;
+      }
+      const full = (document.getElementById('vl-transcript').dataset.final || '') + final;
+      if (final) document.getElementById('vl-transcript').dataset.final = full;
+      document.getElementById('vl-transcript').textContent = full + interim;
+    },
+    () => {
+      if (_voiceListening) {
+        _voiceListening = false;
+        setMicState(false);
+        const transcript = document.getElementById('vl-transcript').textContent.trim();
+        if (transcript) processVoiceTranscript(transcript);
+      }
+    }
+  );
+  if (!_voiceRecognition) return;
+
+  document.getElementById('vl-transcript').dataset.final = '';
+  _voiceRecognition.start();
+  _voiceListening = true;
+  setMicState(true);
+  document.getElementById('vl-status').textContent = 'Listening… speak now';
+}
+
+function stopVoiceListening() {
+  if (_voiceRecognition) { try { _voiceRecognition.stop(); } catch(e){} _voiceRecognition = null; }
+  _voiceListening = false;
+  setMicState(false);
+  const transcript = document.getElementById('vl-transcript').textContent.trim();
+  if (transcript) {
+    processVoiceTranscript(transcript);
+  } else {
+    document.getElementById('vl-status').textContent = 'Press the mic button and speak';
+  }
+}
+
+function setMicState(listening) {
+  const btn = document.getElementById('vl-mic-btn');
+  if (!btn) return;
+  btn.style.background = listening ? '#e24b4a' : 'var(--teal)';
+  btn.title = listening ? 'Stop' : 'Start listening';
+  btn.innerHTML = listening
+    ? `<svg width="26" height="26" viewBox="0 0 24 24" fill="white"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>`
+    : `<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="9" y1="22" x2="15" y2="22"/></svg>`;
+}
+
+function processVoiceTranscript(transcript) {
+  document.getElementById('vl-status').textContent = 'Processing…';
+
+  // Try to find a CB number in the transcript
+  // Matches: "CB 332", "CB332", "CB three thirty two" → harder, so we match numeric only
+  const cbMatch = transcript.match(/\bCB\s*(\d+)\b/i);
+  if (!cbMatch) {
+    document.getElementById('vl-status').textContent = 'No CB number found. Try saying "CB 332, spoke to Dave…"';
+    document.getElementById('vl-result').style.display = 'none';
+    return;
+  }
+
+  const cbNum = cbMatch[1];
+  // Search jobs by normalised CB
+  const normTarget = ('CB' + cbNum).toUpperCase();
+  const job = jobs.find(j => (j.cb||'').replace(/\s+/g,'').toUpperCase() === normTarget);
+
+  if (!job) {
+    document.getElementById('vl-status').textContent = `CB ${cbNum} not found in the active job list.`;
+    document.getElementById('vl-result').style.display = 'none';
+    return;
+  }
+
+  // Strip the CB reference from the comm text
+  const commText = transcript.replace(cbMatch[0], '').replace(/^\s*[,\-–—]\s*/,'').trim();
+
+  document.getElementById('vl-status').textContent = 'Match found — review and save:';
+  document.getElementById('vl-found-job').textContent = job.cb + ' – ' + job.proj + ' (' + job.con + ')';
+  document.getElementById('vl-found-text').textContent = commText;
+  document.getElementById('vl-result').style.display = 'block';
+  document.getElementById('vl-result').dataset.jobId = job.id;
+  document.getElementById('vl-result').dataset.commText = commText;
+}
+
+function voiceLogOpenJob() {
+  const res = document.getElementById('vl-result');
+  const jobId = res.dataset.jobId;
+  const commText = res.dataset.commText;
+  closeVoiceLog();
+  openJob(jobId);
+  // Small delay to let the modal render
+  setTimeout(() => {
+    document.getElementById('comm-text').value = commText;
+    document.getElementById('comm-text').focus();
+  }, 80);
+}
+
+// ── Inline dictate — inside open job modal ───────────────────────────────────
+
+function startInlineVoice() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { alert('Voice recognition is only available in Chrome or Edge.'); return; }
+
+  if (_inlineVoiceListening) {
+    // Stop
+    if (_inlineVoiceRecognition) { try { _inlineVoiceRecognition.stop(); } catch(e){} _inlineVoiceRecognition = null; }
+    _inlineVoiceListening = false;
+    setInlineMicState(false);
+    return;
+  }
+
+  const ta = document.getElementById('comm-text');
+  const existingText = ta.value;
+  let finalSoFar = existingText ? existingText + ' ' : '';
+
+  _inlineVoiceRecognition = _buildRecognition(
+    e => {
+      let interim = '', final = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const t = e.results[i][0].transcript;
+        if (e.results[i].isFinal) final += t;
+        else interim += t;
+      }
+      if (final) finalSoFar += final;
+      ta.value = finalSoFar + interim;
+    },
+    () => {
+      _inlineVoiceListening = false;
+      setInlineMicState(false);
+      ta.value = finalSoFar.trim();
+    }
+  );
+
+  _inlineVoiceRecognition.start();
+  _inlineVoiceListening = true;
+  setInlineMicState(true);
+}
+
+function setInlineMicState(listening) {
+  const btn = document.getElementById('inline-mic-btn');
+  if (!btn) return;
+  btn.style.color = listening ? '#e24b4a' : 'var(--text-secondary)';
+  btn.title = listening ? 'Stop dictating' : 'Dictate note';
+  btn.innerHTML = listening
+    ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="9" y1="22" x2="15" y2="22"/></svg> Stop`
+    : `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="9" y1="22" x2="15" y2="22"/></svg> Dictate`;
+}
 </script>
+
+<!-- VOICE LOG OVERLAY -->
+<div id="vl-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:11000;align-items:center;justify-content:center;padding:40px 20px">
+  <div style="background:var(--bg-primary);border-radius:var(--radius-lg);border:1px solid var(--border);width:100%;max-width:520px;overflow:hidden">
+    <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-size:15px;font-weight:600">🎙 Voice log</div>
+        <div style="font-size:12px;color:var(--text-secondary);margin-top:2px">Say the CB number first, then what happened — e.g. "CB 332, spoke to Dave, sending bill next week"</div>
+      </div>
+      <button onclick="closeVoiceLog()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--text-secondary);line-height:1;padding:0 4px">&times;</button>
+    </div>
+    <div style="padding:24px 20px;text-align:center">
+      <!-- Mic button -->
+      <button id="vl-mic-btn" onclick="toggleVoiceListening()" title="Start listening"
+        style="width:70px;height:70px;border-radius:50%;border:none;cursor:pointer;background:var(--teal);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;transition:background 0.2s;box-shadow:0 2px 8px rgba(0,0,0,0.15)">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="9" y1="22" x2="15" y2="22"/></svg>
+      </button>
+      <div id="vl-status" style="font-size:12px;color:var(--text-secondary);margin-bottom:12px">Press the mic button and speak</div>
+      <!-- Live transcript -->
+      <div id="vl-transcript" style="min-height:48px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-md);padding:10px 14px;font-size:13px;line-height:1.6;text-align:left;color:var(--text-primary);margin-bottom:14px;white-space:pre-wrap"></div>
+      <!-- Match result -->
+      <div id="vl-result" style="display:none;background:var(--success-bg);border:1px solid #b5d99c;border-radius:var(--radius-md);padding:12px 14px;text-align:left;margin-bottom:14px">
+        <div style="font-size:11px;font-weight:600;color:var(--success-txt);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Job matched</div>
+        <div id="vl-found-job" style="font-size:13px;font-weight:600;margin-bottom:6px"></div>
+        <div style="font-size:11px;color:var(--text-secondary);margin-bottom:4px">Update text:</div>
+        <div id="vl-found-text" style="font-size:13px;color:var(--text-primary);line-height:1.5;margin-bottom:12px"></div>
+        <button onclick="voiceLogOpenJob()" class="btn btn-primary" style="background:var(--teal);border-color:var(--teal);width:100%">Open job &amp; fill update →</button>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:center">
+        <button onclick="startVoiceListening()" class="btn" style="font-size:12px">🔄 Try again</button>
+        <button onclick="closeVoiceLog()" class="btn" style="font-size:12px">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- OPP DETAIL MODAL -->
 <div id="opp-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:flex-start;justify-content:center;padding:40px 20px;overflow-y:auto">
