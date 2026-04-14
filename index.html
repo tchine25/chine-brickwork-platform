@@ -262,8 +262,17 @@
       <div class="met"><div class="ml">Secured</div><div class="mv g" id="cnt-secured">—</div><div class="ms">This year</div></div>
       <div class="met"><div class="ml">Future pipeline</div><div class="mv p" id="cnt-future">—</div><div class="ms">Tracked projects</div></div>
     </div>
-    <div class="info-bar">Click any job row to view its full communication history, log a call, or update the next action.</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px">
+    <div style="padding:10px 0 14px;display:flex;gap:10px;align-items:center">
+      <input id="ov-search" placeholder="🔍  Search jobs, contractors, CB numbers..." oninput="renderOverview()" style="flex:1;font-size:13px;padding:8px 14px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--bg-primary);color:var(--text-primary)">
+      <button onclick="document.getElementById('ov-search').value='';renderOverview()" class="btn" style="font-size:12px">Clear</button>
+    </div>
+    <div id="ov-search-results" style="display:none;margin-bottom:14px">
+      <div class="card">
+        <div class="card-hdr"><span class="card-title">Search results</span><span class="bdg bdg-b" id="badge-search-count"></span></div>
+        <ul class="jlist" id="ov-search-list"></ul>
+      </div>
+    </div>
+    <div id="ov-columns" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px">
       <div class="card">
         <div class="card-hdr"><span class="card-title">Overdue</span><span class="bdg bdg-r" id="badge-overdue">0 overdue</span></div>
         <ul class="jlist" id="ov-overdue"></ul>
@@ -953,13 +962,25 @@ function obadge(o){return`<span style="width:22px;height:22px;border-radius:50%;
 
 // ── RENDER ────────────────────────────────────────────────────────────────────
 function renderOverview(){
-  const ov=jobs.filter(j=>j.status==='overdue').sort((a,b)=>dateSortVal(a.nextDate)-dateSortVal(b.nextDate));
-  const wk=jobs.filter(j=>j.status==='week').sort((a,b)=>dateSortVal(a.nextDate)-dateSortVal(b.nextDate));
-  const ok=jobs.filter(j=>j.status==='ok').sort((a,b)=>dateSortVal(a.nextDate)-dateSortVal(b.nextDate)).slice(0,10);
+  const q=(document.getElementById('ov-search')||{value:''}).value.trim().toLowerCase();
   const dtc={overdue:'r',week:'a',ok:'b'};
   const dc={overdue:'dr',week:'da',ok:'dg'};
   const folderTag=f=>f?`<span style="font-size:10px;background:#e8f0fe;color:#1a56db;border-radius:3px;padding:1px 5px;margin-left:6px;font-weight:500">${f}</span>`:'';
-  const mkLi=j=>`<li class="ji" onclick="openJob('${j.id}')"><div class="dot ${dc[j.status]}"></div><div style="flex:1"><div class="jname">${j.cb} – ${j.proj} <span style="font-weight:400;color:var(--text-secondary)">· ${j.con}</span>${folderTag(j.folder)}</div><div class="jdesc">${j.nextAct}</div></div><div class="jdate ${dtc[j.status]}">${j.nextDate.slice(0,5)}</div></li>`;
+  const mkLi=j=>`<li class="ji" onclick="openJob('${j.id}')"><div class="dot ${dc[j.status]}"></div><div style="flex:1"><div class="jname">${j.cb} – ${j.proj} <span style="font-weight:400;color:var(--text-secondary)">· ${j.con}</span>${folderTag(j.folder)}</div><div class="jdesc">${j.nextAct}</div></div><div class="jdate ${dtc[j.status]}">${j.nextDate?j.nextDate.slice(0,5):''}</div></li>`;
+  if(q){
+    const matches=jobs.filter(j=>(j.cb+' '+j.proj+' '+j.con+' '+(j.nextAct||'')+' '+(j.contact||'')).toLowerCase().includes(q))
+      .sort((a,b)=>dateSortVal(a.nextDate)-dateSortVal(b.nextDate));
+    document.getElementById('ov-search-results').style.display='block';
+    document.getElementById('ov-columns').style.display='none';
+    document.getElementById('badge-search-count').textContent=matches.length+' results';
+    document.getElementById('ov-search-list').innerHTML=matches.length?matches.map(mkLi).join(''):'<li style="padding:12px 15px;color:var(--text-secondary);font-size:12px">No jobs found.</li>';
+    return;
+  }
+  document.getElementById('ov-search-results').style.display='none';
+  document.getElementById('ov-columns').style.display='grid';
+  const ov=jobs.filter(j=>j.status==='overdue').sort((a,b)=>dateSortVal(a.nextDate)-dateSortVal(b.nextDate));
+  const wk=jobs.filter(j=>j.status==='week').sort((a,b)=>dateSortVal(a.nextDate)-dateSortVal(b.nextDate));
+  const ok=jobs.filter(j=>j.status==='ok').sort((a,b)=>dateSortVal(a.nextDate)-dateSortVal(b.nextDate)).slice(0,10);
   document.getElementById('ov-overdue').innerHTML=ov.map(mkLi).join('');
   document.getElementById('ov-week').innerHTML=wk.map(mkLi).join('');
   document.getElementById('ov-ok').innerHTML=ok.map(mkLi).join('');
