@@ -1492,10 +1492,9 @@ function openJob(id){
   document.getElementById('m-email-btn').onclick=()=>{
     const subject=encodeURIComponent(`Following up: ${j.cb} – ${j.proj}`);
     const body=encodeURIComponent(`Hi,\n\nI'm following up on ${j.proj}.\n\n${j.nextAct}\n\nKind regards,\nChine Brickwork`);
-    // Extract email from contact field (format: "Name | mobile | email")
     const emailMatch=(j.contact||'').match(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/);
     const to=emailMatch?emailMatch[0]:'';
-    window.location.href=`mailto:${to}?subject=${subject}&body=${body}`;
+    const a=document.createElement('a');a.href=`mailto:${to}?subject=${subject}&body=${body}`;a.target='_blank';document.body.appendChild(a);a.click();document.body.removeChild(a);
   };
   document.getElementById('job-contact-picker').style.display='none';
   renderJobContacts(j);
