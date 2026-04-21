@@ -1,0 +1,2057 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chine Brickwork Complete Management System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f9f7f4;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: white;
+            border-bottom: 1px solid #ddd;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        h1 {
+            font-size: 28px;
+            margin-bottom: 15px;
+            color: #1a1a1a;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .control-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .control-group label {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .control-group select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            background: white;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 10px;
+            border-bottom: 1px solid #ddd;
+            padding-top: 15px;
+            flex-wrap: wrap;
+            overflow-x: auto;
+        }
+
+        .nav-tab {
+            background: none;
+            border: none;
+            padding: 10px 15px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #666;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .nav-tab:hover {
+            color: #333;
+        }
+
+        .nav-tab.active {
+            color: #0066cc;
+            border-bottom-color: #0066cc;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .dashboard-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            margin-bottom: 30px;
+        }
+
+        .dashboard-table thead {
+            background: #f5f5f5;
+            border-bottom: 2px solid #ddd;
+        }
+
+        .dashboard-table th {
+            padding: 15px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #666;
+        }
+
+        .dashboard-table td {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            font-size: 14px;
+        }
+
+        .dashboard-table tbody tr:hover {
+            background: #fafafa;
+        }
+
+        .form-name {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .count-cell {
+            text-align: center;
+            font-weight: 600;
+            min-width: 60px;
+            cursor: pointer;
+            padding: 15px;
+            transition: background 0.2s;
+            border-radius: 4px;
+        }
+
+        .count-cell:hover {
+            background: #f0f0f0;
+        }
+
+        .count-raised {
+            color: #2196F3;
+            font-size: 16px;
+        }
+
+        .count-open {
+            color: #FF9800;
+            font-size: 16px;
+        }
+
+        .count-closed {
+            color: #4CAF50;
+            font-size: 16px;
+        }
+
+        .dashboard-detail-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+        }
+
+        .dashboard-detail-modal.open {
+            display: flex !important;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .dashboard-detail-content {
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+            width: 90%;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            position: relative;
+            margin: auto;
+        }
+
+        .dashboard-detail-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .dashboard-detail-close:hover {
+            color: #333;
+        }
+
+        .dashboard-detail-header {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .button {
+            padding: 10px 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+
+        .button:hover {
+            background: #f5f5f5;
+            border-color: #999;
+        }
+
+        .button-primary {
+            background: #0066cc;
+            color: white;
+            border-color: #0066cc;
+        }
+
+        .button-primary:hover {
+            background: #0052a3;
+        }
+
+        .form-container {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            border: 1px solid #eee;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            margin-bottom: 25px;
+            display: none;
+        }
+
+        .form-container.open {
+            display: block;
+        }
+
+        .form-container h3 {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: #1a1a1a;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 15px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            margin-bottom: 5px;
+            font-weight: 600;
+            font-size: 13px;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #0066cc;
+            box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+        }
+
+        .form-group textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .form-section-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin: 25px 0 15px 0;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+            grid-column: 1 / -1;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .button-secondary {
+            background: #f0f0f0;
+            color: #333;
+            border-color: #ddd;
+            padding: 10px 16px;
+            font-size: 13px;
+        }
+
+        .button-secondary:hover {
+            background: #e0e0e0;
+            border-color: #999;
+        }
+
+        .attachment-container {
+            background: #fafafa;
+            border: 1px dashed #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .attachment-list-form {
+            margin-top: 10px;
+        }
+
+        .attachment-item-form {
+            background: white;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #eee;
+        }
+
+        .attachment-name-form {
+            font-size: 13px;
+            color: #333;
+            font-weight: 500;
+            flex: 1;
+        }
+
+        .attachment-size-form {
+            font-size: 12px;
+            color: #999;
+            margin: 0 10px;
+        }
+
+        .remove-btn {
+            background: none;
+            border: none;
+            color: #d32f2f;
+            cursor: pointer;
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 3px;
+        }
+
+        .remove-btn:hover {
+            background: rgba(211, 47, 47, 0.1);
+        }
+
+        .file-input-label-form {
+            display: inline-block;
+            padding: 8px 16px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .file-input-label-form:hover {
+            background: #f5f5f5;
+            border-color: #0066cc;
+            color: #0066cc;
+        }
+
+        .file-input-form {
+            display: none;
+        }
+
+        .email-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+        }
+
+        .email-modal.open {
+            display: flex !important;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .email-modal-content {
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            position: relative;
+            margin: auto;
+        }
+
+        .email-modal-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .email-modal-close:hover {
+            color: #333;
+        }
+
+        .email-modal-header {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .email-form-group {
+            margin-bottom: 15px;
+        }
+
+        .email-form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .email-form-group input,
+        .email-form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .email-form-group textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .register-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            margin-top: 20px;
+            font-size: 13px;
+        }
+
+        .register-table thead {
+            background: #f5f5f5;
+            border-bottom: 2px solid #ddd;
+        }
+
+        .register-table th {
+            padding: 12px;
+            text-align: left;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #666;
+        }
+
+        .register-table td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .register-table tbody tr:hover {
+            background: #fafafa;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-badge.draft { background: #f0f0f0; color: #666; }
+        .status-badge.issued { background: #e3f2fd; color: #1976d2; }
+        .status-badge.open { background: #fff3e0; color: #e65100; }
+        .status-badge.resolved { background: #e8f5e9; color: #2e7d32; }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #eee;
+        }
+
+        .filter-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .filter-btn:hover {
+            border-color: #0066cc;
+            color: #0066cc;
+        }
+
+        .filter-btn.active {
+            background: #0066cc;
+            color: white;
+            border-color: #0066cc;
+        }
+
+        .success-message {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            border-left: 4px solid #2e7d32;
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .checkbox-group label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: normal;
+            margin-bottom: 0;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+            margin: 0;
+        }
+
+        .form-number-display {
+            background: #f9f7f4;
+            padding: 12px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 14px;
+            font-family: 'Courier New', monospace;
+            margin-bottom: 15px;
+            border: 1px solid #e0e0e0;
+        }
+
+        @media (max-width: 768px) {
+            .nav-tabs {
+                gap: 5px;
+            }
+            .nav-tab {
+                padding: 8px 10px;
+                font-size: 12px;
+            }
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            .register-table {
+                font-size: 12px;
+            }
+            .register-table th,
+            .register-table td {
+                padding: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Chine Brickwork Complete Management System</h1>
+            <div class="header-controls">
+                <div class="control-group">
+                    <label>Select Project:</label>
+                    <select id="projectSelect" onchange="switchProject()">
+                        <option value="CB319">CB 319 HP - Commercial Rd</option>
+                        <option value="CB320">CB 320 Higgins - York Way Estate</option>
+                        <option value="CB325">CB 325 Lovell - Sydenham Hill</option>
+                        <option value="CB337">CB 337 Redrow - Colindale Block W</option>
+                        <option value="CB348">CB 348 Higgins - Summerstown</option>
+                        <option value="CB354">CB 354 WH - Bracknell beeches</option>
+                        <option value="CB409">CB 409 Natta - Broomfield House Chelmsford</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="nav-tabs" id="navTabs">
+                <button class="nav-tab active" onclick="switchTab(event, 'dashboard')">📊 Dashboard</button>
+                <button class="nav-tab" onclick="switchTab(event, 'rfi')">RFI</button>
+                <button class="nav-tab" onclick="switchTab(event, 'cvi')">CVI</button>
+                <button class="nav-tab" onclick="switchTab(event, 'delay')">Delay Notice</button>
+                <button class="nav-tab" onclick="switchTab(event, 'diary')">Daily Diary</button>
+                <button class="nav-tab" onclick="switchTab(event, 'material')">Material</button>
+                <button class="nav-tab" onclick="switchTab(event, 'scaffold')">Scaffold</button>
+                <button class="nav-tab" onclick="switchTab(event, 'puwer')">PUWER</button>
+                <button class="nav-tab" onclick="switchTab(event, 'havs')">HAVS</button>
+                <button class="nav-tab" onclick="switchTab(event, 'dabs')">DABS</button>
+                <button class="nav-tab" onclick="switchTab(event, 'incident')">Incident</button>
+                <button class="nav-tab" onclick="switchTab(event, 'respirator')">Respirator</button>
+                <button class="nav-tab" onclick="switchTab(event, 'toolbox')">Toolbox Talk</button>
+                <button class="nav-tab" onclick="switchTab(event, 'loler')">LOLER</button>
+                <button class="nav-tab" onclick="switchTab(event, 'audit')">Audit</button>
+                <button class="nav-tab" onclick="switchTab(event, 'progress')">Progress</button>
+                <button class="nav-tab" onclick="switchTab(event, 'reports')">Reports</button>
+            </div>
+        </header>
+
+        <!-- DASHBOARD -->
+        <div id="dashboard" class="tab-content active">
+            <h2 style="margin-bottom: 20px; font-size: 20px;">Form Status Overview</h2>
+            <table class="dashboard-table">
+                <thead>
+                    <tr>
+                        <th>Form Type</th>
+                        <th style="text-align: center;">Raised</th>
+                        <th style="text-align: center;">Open</th>
+                        <th style="text-align: center;">Closed</th>
+                    </tr>
+                </thead>
+                <tbody id="dashboardBody">
+                </tbody>
+            </table>
+        </div>
+
+        <!-- RFI / CVI / DELAY / DIARY / MATERIAL / SCAFFOLD (Commercial Forms) -->
+        <!-- These use the existing form templates from previous version -->
+        <div id="rfi" class="tab-content">
+            <button class="button button-primary" onclick="toggleForm('rfi')">+ Raise New RFI</button>
+            <div id="rfi-form" class="form-container">
+                <h3>Request for Information (RFI)</h3>
+                <div class="form-number-display" id="rfi-number">CB320-RFI-001</div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Raised By</label>
+                        <input type="text" id="rfi-raised-by">
+                    </div>
+                    <div class="form-group">
+                        <label>Subject</label>
+                        <input type="text" id="rfi-subject">
+                    </div>
+                    <div class="form-group">
+                        <label>Recipient</label>
+                        <input type="text" id="rfi-recipient">
+                    </div>
+                    <div class="form-group">
+                        <label>Due Date</label>
+                        <input type="date" id="rfi-due-date">
+                    </div>
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select id="rfi-status">
+                            <option value="Draft">Draft</option>
+                            <option value="Issued" selected>Issued</option>
+                            <option value="Open">Open</option>
+                            <option value="Resolved">Resolved</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label>Description</label>
+                        <textarea id="rfi-description"></textarea>
+                    </div>
+                </div>
+
+                <div class="attachment-container">
+                    <div style="font-weight: 600; margin-bottom: 10px;">📎 Attachments</div>
+                    <label class="file-input-label-form" for="rfi-file-input">
+                        + Add Files
+                    </label>
+                    <input type="file" id="rfi-file-input" class="file-input-form" multiple onchange="addFormAttachment('rfi')">
+                    <div class="attachment-list-form" id="rfi-attachments"></div>
+                </div>
+
+                <div class="form-actions">
+                    <button class="button button-primary" onclick="submitForm('rfi')">Submit RFI</button>
+                    <button class="button button-secondary" onclick="emailForm('rfi')">📧 Email</button>
+                    <button class="button button-secondary" onclick="previewPDF('rfi')">📄 PDF</button>
+                    <button class="button" onclick="toggleForm('rfi')">Cancel</button>
+                </div>
+            </div>
+            <div id="rfi-register"></div>
+        </div>
+
+        <!-- CVI FORM -->
+        <div id="cvi" class="tab-content">
+            <button class="button button-primary" onclick="toggleForm('cvi')">+ Issue New CVI</button>
+            <div id="cvi-form" class="form-container">
+                <h3>CVI - Confirmation of Verbal Instruction</h3>
+                <div class="form-number-display" id="cvi-number">CB320-CVI-001</div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Issued By</label>
+                        <input type="text" id="cvi-issued-by">
+                    </div>
+                    <div class="form-group">
+                        <label>Linked RFI</label>
+                        <input type="text" id="cvi-linked-rfi">
+                    </div>
+                    <div class="form-group">
+                        <label>Cost Estimate (£)</label>
+                        <input type="text" id="cvi-cost">
+                    </div>
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select id="cvi-status">
+                            <option value="Draft">Draft</option>
+                            <option value="Issued" selected>Issued</option>
+                            <option value="Open">Open</option>
+                            <option value="Resolved">Resolved</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label>Description</label>
+                        <textarea id="cvi-description"></textarea>
+                    </div>
+                </div>
+
+                <div class="attachment-container">
+                    <div style="font-weight: 600; margin-bottom: 10px;">📎 Attachments</div>
+                    <label class="file-input-label-form" for="cvi-file-input">
+                        + Add Files
+                    </label>
+                    <input type="file" id="cvi-file-input" class="file-input-form" multiple onchange="addFormAttachment('cvi')">
+                    <div class="attachment-list-form" id="cvi-attachments"></div>
+                </div>
+
+                <div class="form-actions">
+                    <button class="button button-primary" onclick="submitForm('cvi')">Submit CVI</button>
+                    <button class="button button-secondary" onclick="emailForm('cvi')">📧 Email</button>
+                    <button class="button button-secondary" onclick="previewPDF('cvi')">📄 PDF</button>
+                    <button class="button" onclick="toggleForm('cvi')">Cancel</button>
+                </div>
+            </div>
+            <div id="cvi-register"></div>
+        </div>
+
+        <!-- DELAY NOTICE FORM -->
+        <div id="delay" class="tab-content">
+            <button class="button button-primary" onclick="toggleForm('delay')">+ Issue Delay Notice</button>
+            <div id="delay-form" class="form-container">
+                <h3>Delay Notice</h3>
+                <div class="form-number-display" id="delay-number">CB320-DN-001</div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Issued By</label>
+                        <input type="text" id="delay-issued-by">
+                    </div>
+                    <div class="form-group">
+                        <label>Cause of Delay</label>
+                        <select id="delay-cause">
+                            <option>Adverse Weather</option>
+                            <option>Material Shortage</option>
+                            <option>Labour Shortage</option>
+                            <option>Design Issue</option>
+                            <option>Contractor Issue</option>
+                            <option>Supply Chain</option>
+                            <option>Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Start Date</label>
+                        <input type="date" id="delay-start-date">
+                    </div>
+                    <div class="form-group">
+                        <label>Duration (days)</label>
+                        <input type="number" id="delay-duration">
+                    </div>
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select id="delay-status">
+                            <option value="Draft">Draft</option>
+                            <option value="Issued" selected>Issued</option>
+                            <option value="Open">Open</option>
+                            <option value="Resolved">Resolved</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label>Affected Works</label>
+                        <textarea id="delay-affected"></textarea>
+                    </div>
+                </div>
+
+                <div class="attachment-container">
+                    <div style="font-weight: 600; margin-bottom: 10px;">📎 Attachments</div>
+                    <label class="file-input-label-form" for="delay-file-input">
+                        + Add Files
+                    </label>
+                    <input type="file" id="delay-file-input" class="file-input-form" multiple onchange="addFormAttachment('delay')">
+                    <div class="attachment-list-form" id="delay-attachments"></div>
+                </div>
+
+                <div class="form-actions">
+                    <button class="button button-primary" onclick="submitForm('delay')">Submit Delay Notice</button>
+                    <button class="button button-secondary" onclick="emailForm('delay')">📧 Email</button>
+                    <button class="button button-secondary" onclick="previewPDF('delay')">📄 PDF</button>
+                    <button class="button" onclick="toggleForm('delay')">Cancel</button>
+                </div>
+            </div>
+            <div id="delay-register"></div>
+        </div>
+
+        <!-- DAILY DIARY FORM -->
+        <div id="diary" class="tab-content">
+            <button class="button button-primary" onclick="toggleForm('diary')">+ Log Daily Diary</button>
+            <div id="diary-form" class="form-container">
+                <h3>Daily Diary Entry</h3>
+                <div class="form-number-display" id="diary-number">CB320-DD-001</div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Site Manager</label>
+                        <input type="text" id="diary-site-manager">
+                    </div>
+                    <div class="form-group">
+                        <label>Date</label>
+                        <input type="date" id="diary-date">
+                    </div>
+                    <div class="form-group">
+                        <label>Personnel On Site</label>
+                        <input type="text" id="diary-personnel">
+                    </div>
+                    <div class="form-group">
+                        <label>Weather</label>
+                        <input type="text" id="diary-weather">
+                    </div>
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label>Work Completed</label>
+                        <textarea id="diary-completed"></textarea>
+                    </div>
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label>Planned for Tomorrow</label>
+                        <textarea id="diary-planned"></textarea>
+                    </div>
+                </div>
+
+                <div class="attachment-container">
+                    <div style="font-weight: 600; margin-bottom: 10px;">📎 Attachments</div>
+                    <label class="file-input-label-form" for="diary-file-input">
+                        + Add Files
+                    </label>
+                    <input type="file" id="diary-file-input" class="file-input-form" multiple onchange="addFormAttachment('diary')">
+                    <div class="attachment-list-form" id="diary-attachments"></div>
+                </div>
+
+                <div class="form-actions">
+                    <button class="button button-primary" onclick="submitForm('diary')">Submit Diary</button>
+                    <button class="button button-secondary" onclick="emailForm('diary')">📧 Email</button>
+                    <button class="button button-secondary" onclick="previewPDF('diary')">📄 PDF</button>
+                    <button class="button" onclick="toggleForm('diary')">Cancel</button>
+                </div>
+            </div>
+            <div id="diary-register"></div>
+        </div>
+
+        <!-- MATERIAL REQUEST FORM -->
+        <div id="material" class="tab-content">
+            <button class="button button-primary" onclick="toggleForm('material')">+ Raise Material Request</button>
+            <div id="material-form" class="form-container">
+                <h3>Material Requisition Form</h3>
+                <div class="form-number-display" id="material-number">CB320-MR-001</div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Requested By</label>
+                        <input type="text" id="material-requested-by">
+                    </div>
+                    <div class="form-group">
+                        <label>Material Description</label>
+                        <input type="text" id="material-description">
+                    </div>
+                    <div class="form-group">
+                        <label>Quantity</label>
+                        <input type="text" id="material-quantity">
+                    </div>
+                    <div class="form-group">
+                        <label>Supplier</label>
+                        <input type="text" id="material-supplier">
+                    </div>
+                    <div class="form-group">
+                        <label>Required Date</label>
+                        <input type="date" id="material-required-date">
+                    </div>
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label>Delivery Location & Instructions</label>
+                        <textarea id="material-instructions"></textarea>
+                    </div>
+                </div>
+
+                <div class="attachment-container">
+                    <div style="font-weight: 600; margin-bottom: 10px;">📎 Attachments</div>
+                    <label class="file-input-label-form" for="material-file-input">
+                        + Add Files
+                    </label>
+                    <input type="file" id="material-file-input" class="file-input-form" multiple onchange="addFormAttachment('material')">
+                    <div class="attachment-list-form" id="material-attachments"></div>
+                </div>
+
+                <div class="form-actions">
+                    <button class="button button-primary" onclick="submitForm('material')">Submit Request</button>
+                    <button class="button button-secondary" onclick="emailForm('material')">📧 Email</button>
+                    <button class="button button-secondary" onclick="previewPDF('material')">📄 PDF</button>
+                    <button class="button" onclick="toggleForm('material')">Cancel</button>
+                </div>
+            </div>
+            <div id="material-register"></div>
+        </div>
+
+        <!-- SCAFFOLD REQUEST FORM -->
+        <div id="scaffold" class="tab-content">
+            <button class="button button-primary" onclick="toggleForm('scaffold')">+ Request Scaffold</button>
+            <div id="scaffold-form" class="form-container">
+                <h3>Scaffold Request</h3>
+                <div class="form-number-display" id="scaffold-number">CB320-SR-001</div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Requested By</label>
+                        <input type="text" id="scaffold-requested-by">
+                    </div>
+                    <div class="form-group">
+                        <label>Location</label>
+                        <input type="text" id="scaffold-location">
+                    </div>
+                    <div class="form-group">
+                        <label>Type</label>
+                        <select id="scaffold-type">
+                            <option>Tube & Clamp</option>
+                            <option>Modular System</option>
+                            <option>Cantilever</option>
+                            <option>Loading Bay</option>
+                            <option>Hop-ups</option>
+                            <option>Brick Guard</option>
+                            <option>Protection Fans</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Height (m)</label>
+                        <input type="text" id="scaffold-height">
+                    </div>
+                    <div class="form-group">
+                        <label>Required By</label>
+                        <input type="date" id="scaffold-required-date">
+                    </div>
+                    <div class="form-group">
+                        <label>Duration</label>
+                        <input type="text" id="scaffold-duration">
+                    </div>
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label>Reason for Request</label>
+                        <textarea id="scaffold-reason"></textarea>
+                    </div>
+                </div>
+
+                <div class="attachment-container">
+                    <div style="font-weight: 600; margin-bottom: 10px;">📎 Attachments</div>
+                    <label class="file-input-label-form" for="scaffold-file-input">
+                        + Add Files
+                    </label>
+                    <input type="file" id="scaffold-file-input" class="file-input-form" multiple onchange="addFormAttachment('scaffold')">
+                    <div class="attachment-list-form" id="scaffold-attachments"></div>
+                </div>
+
+                <div class="form-actions">
+                    <button class="button button-primary" onclick="submitForm('scaffold')">Submit Request</button>
+                    <button class="button button-secondary" onclick="emailForm('scaffold')">📧 Email</button>
+                    <button class="button button-secondary" onclick="previewPDF('scaffold')">📄 PDF</button>
+                    <button class="button" onclick="toggleForm('scaffold')">Cancel</button>
+                </div>
+            </div>
+            <div id="scaffold-register"></div>
+        </div>
+
+        <!-- PUWER FORM -->
+        <div id="puwer" class="tab-content">
+            <button class="button button-primary" onclick="toggleForm('puwer')">+ New PUWER Report</button>
+            <div id="puwer-form" class="form-container">
+                <h3>PUWER - Provision and Use of Work Equipment Regulations</h3>
+                <div class="form-number-display" id="puwer-number">CB320-PW-001</div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Inspection Date</label>
+                        <input type="date" id="puwer-date">
+                    </div>
+                    <div class="form-group">
+                        <label>Inspector Name</label>
+                        <input type="text" id="puwer-inspector">
+                    </div>
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label>Equipment Description & Serial Numbers</label>
+                        <textarea id="puwer-description" placeholder="1no. Silo, 2no. Hammer drill cordless Makita, etc."></textarea>
+                    </div>
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label>Safety Issues Identified</label>
+                        <textarea id="puwer-issues" placeholder="None"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Can work proceed safely?</label>
+                        <select id="puwer-safe">
+                            <option value="Yes">Yes</option>
+                            <option value="No">No</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="attachment-container">
+                    <div style="font-weight: 600; margin-bottom: 10px;">📎 Attachments</div>
+                    <label class="file-input-label-form" for="puwer-file-input">
+                        + Add Files
+                    </label>
+                    <input type="file" id="puwer-file-input" class="file-input-form" multiple onchange="addFormAttachment('puwer')">
+                    <div class="attachment-list-form" id="puwer-attachments"></div>
+                </div>
+
+                <div class="form-actions">
+                    <button class="button button-primary" onclick="submitForm('puwer')">Submit PUWER Report</button>
+                    <button class="button button-secondary" onclick="emailForm('puwer')">📧 Email</button>
+                    <button class="button button-secondary" onclick="previewPDF('puwer')">📄 PDF</button>
+                    <button class="button" onclick="toggleForm('puwer')">Cancel</button>
+                </div>
+            </div>
+            <div id="puwer-register"></div>
+        </div>
+
+        <!-- HAVS FORM -->
+        <div id="havs" class="tab-content">
+            <button class="button button-primary" onclick="toggleForm('havs')">+ Log HAVS Record</button>
+            <div id="havs-form" class="form-container">
+                <h3>HAVS Register - Hand Arm Vibration Syndrome</h3>
+                <div class="form-number-display" id="havs-number">CB320-HA-001</div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Operative Name</label>
+                        <input type="text" id="havs-operative">
+                    </div>
+                    <div class="form-group">
+                        <label>Tool Used</label>
+                        <input type="text" id="havs-tool" placeholder="e.g. Makita drill">
+                    </div>
+                    <div class="form-group">
+                        <label>Date</label>
+                        <input type="date" id="havs-date">
+                    </div>
+                    <div class="form-group">
+                        <label>Time Tool Used (minutes)</label>
+                        <input type="number" id="havs-duration">
+                    </div>
+                    <div class="form-group">
+                        <label>Supervisor</label>
+                        <input type="text" id="havs-supervisor">
+                    </div>
+                </div>
+
+                <div class="attachment-container">
+                    <div style="font-weight: 600; margin-bottom: 10px;">📎 Attachments</div>
+                    <label class="file-input-label-form" for="havs-file-input">
+                        + Add Files
+                    </label>
+                    <input type="file" id="havs-file-input" class="file-input-form" multiple onchange="addFormAttachment('havs')">
+                    <div class="attachment-list-form" id="havs-attachments"></div>
+                </div>
+
+                <div class="form-actions">
+                    <button class="button button-primary" onclick="submitForm('havs')">Submit HAVS Record</button>
+                    <button class="button button-secondary" onclick="emailForm('havs')">📧 Email</button>
+                    <button class="button button-secondary" onclick="previewPDF('havs')">📄 PDF</button>
+                    <button class="button" onclick="toggleForm('havs')">Cancel</button>
+                </div>
+            </div>
+            <div id="havs-register"></div>
+        </div>
+
+        <!-- DABS FORM -->
+        <div id="dabs" class="tab-content">
+            <button class="button button-primary" onclick="toggleForm('dabs')">+ New DABS Briefing</button>
+            <div id="dabs-form" class="form-container">
+                <h3>DABS - Daily Activity Briefing Sheet</h3>
+                <div class="form-number-display" id="dabs-number">CB320-DB-001</div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Project Name</label>
+                        <input type="text" id="dabs-project">
+                    </div>
+                    <div class="form-group">
+                        <label>Date</label>
+                        <input type="date" id="dabs-date">
+                    </div>
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label>Work Areas/Tasks in Progress</label>
+                        <textarea id="dabs-tasks" placeholder="Core B level 7 MSA installation, brickwork, etc."></textarea>
+                    </div>
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label>Main Risks & Hazards</label>
+                        <textarea id="dabs-risks" placeholder="Slips Trips Falls, Manual Handling, Working at Height, COSHH, etc."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Induction Completed?</label>
+                        <select id="dabs-induction">
+                            <option>Yes</option>
+                            <option>No</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Team Can Work Safely?</label>
+                        <select id="dabs-safe">
+                            <option>Yes</option>
+                            <option>No</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="attachment-container">
+                    <div style="font-weight: 600; margin-bottom: 10px;">📎 Attachments</div>
+                    <label class="file-input-label-form" for="dabs-file-input">
+                        + Add Files
+                    </label>
+                    <input type="file" id="dabs-file-input" class="file-input-form" multiple onchange="addFormAttachment('dabs')">
+                    <div class="attachment-list-form" id="dabs-attachments"></div>
+                </div>
+
+                <div class="form-actions">
+                    <button class="button button-primary" onclick="submitForm('dabs')">Submit DABS</button>
+                    <button class="button button-secondary" onclick="emailForm('dabs')">📧 Email</button>
+                    <button class="button button-secondary" onclick="previewPDF('dabs')">📄 PDF</button>
+                    <button class="button" onclick="toggleForm('dabs')">Cancel</button>
+                </div>
+            </div>
+            <div id="dabs-register"></div>
+        </div>
+
+        <!-- INCIDENT REPORT FORM -->
+        <div id="incident" class="tab-content">
+            <button class="button button-primary" onclick="toggleForm('incident')">+ Report Incident</button>
+            <div id="incident-form" class="form-container">
+                <h3>Accident / Incident Report</h3>
+                <div class="form-number-display" id="incident-number">CB320-INC-001</div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Report Author</label>
+                        <input type="text" id="incident-author">
+                    </div>
+                    <div class="form-group">
+                        <label>Date of Incident</label>
+                        <input type="date" id="incident-date">
+                    </div>
+                    <div class="form-group">
+                        <label>Time</label>
+                        <input type="time" id="incident-time">
+                    </div>
+                    <div class="form-group">
+                        <label>Person Injured</label>
+                        <input type="text" id="incident-injured">
+                    </div>
+                    <div class="form-group">
+                        <label>Location</label>
+                        <input type="text" id="incident-location">
+                    </div>
+                    <div class="form-group">
+                        <label>Severity</label>
+                        <select id="incident-severity">
+                            <option>Low</option>
+                            <option>Medium</option>
+                            <option>High</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label>Incident Description</label>
+                        <textarea id="incident-description" placeholder="Detail what happened..."></textarea>
+                    </div>
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label>Actions Taken</label>
+                        <textarea id="incident-actions" placeholder="First aid, ambulance, police, etc."></textarea>
+                    </div>
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label>Corrective Actions</label>
+                        <textarea id="incident-corrective"></textarea>
+                    </div>
+                </div>
+
+                <div class="attachment-container">
+                    <div style="font-weight: 600; margin-bottom: 10px;">📎 Attachments</div>
+                    <label class="file-input-label-form" for="incident-file-input">
+                        + Add Files
+                    </label>
+                    <input type="file" id="incident-file-input" class="file-input-form" multiple onchange="addFormAttachment('incident')">
+                    <div class="attachment-list-form" id="incident-attachments"></div>
+                </div>
+
+                <div class="form-actions">
+                    <button class="button button-primary" onclick="submitForm('incident')">Submit Incident Report</button>
+                    <button class="button button-secondary" onclick="emailForm('incident')">📧 Email</button>
+                    <button class="button button-secondary" onclick="previewPDF('incident')">📄 PDF</button>
+                    <button class="button" onclick="toggleForm('incident')">Cancel</button>
+                </div>
+            </div>
+            <div id="incident-register"></div>
+        </div>
+
+        <!-- RESPIRATOR FIT TEST FORM -->
+        <div id="respirator" class="tab-content">
+            <button class="button button-primary" onclick="toggleForm('respirator')">+ New Fit Test</button>
+            <div id="respirator-form" class="form-container">
+                <h3>Respirator Qualitative Face Fit Test</h3>
+                <div class="form-number-display" id="respirator-number">CB320-RF-001</div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Operative Name</label>
+                        <input type="text" id="respirator-operative">
+                    </div>
+                    <div class="form-group">
+                        <label>Assessor</label>
+                        <input type="text" id="respirator-assessor">
+                    </div>
+                    <div class="form-group">
+                        <label>Date</label>
+                        <input type="date" id="respirator-date">
+                    </div>
+                    <div class="form-group">
+                        <label>Mask Make</label>
+                        <input type="text" id="respirator-make" placeholder="e.g. JSP">
+                    </div>
+                    <div class="form-group">
+                        <label>Mask Model</label>
+                        <input type="text" id="respirator-model" placeholder="e.g. M632">
+                    </div>
+                    <div class="form-group">
+                        <label>Sensitivity Level</label>
+                        <select id="respirator-sensitivity">
+                            <option>10</option>
+                            <option>20</option>
+                            <option>30</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Normal Breathing</label>
+                        <select id="respirator-breathing">
+                            <option>Pass</option>
+                            <option>Fail</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Deep Breathing</label>
+                        <select id="respirator-deep">
+                            <option>Pass</option>
+                            <option>Fail</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="attachment-container">
+                    <div style="font-weight: 600; margin-bottom: 10px;">📎 Attachments</div>
+                    <label class="file-input-label-form" for="respirator-file-input">
+                        + Add Files
+                    </label>
+                    <input type="file" id="respirator-file-input" class="file-input-form" multiple onchange="addFormAttachment('respirator')">
+                    <div class="attachment-list-form" id="respirator-attachments"></div>
+                </div>
+
+                <div class="form-actions">
+                    <button class="button button-primary" onclick="submitForm('respirator')">Submit Fit Test</button>
+                    <button class="button button-secondary" onclick="emailForm('respirator')">📧 Email</button>
+                    <button class="button button-secondary" onclick="previewPDF('respirator')">📄 PDF</button>
+                    <button class="button" onclick="toggleForm('respirator')">Cancel</button>
+                </div>
+            </div>
+            <div id="respirator-register"></div>
+        </div>
+
+        <!-- TOOLBOX TALK FORM -->
+        <div id="toolbox" class="tab-content">
+            <button class="button button-primary" onclick="toggleForm('toolbox')">+ New Toolbox Talk</button>
+            <div id="toolbox-form" class="form-container">
+                <h3>Tool Box Talk Sheet - Safety Briefing</h3>
+                <div class="form-number-display" id="toolbox-number">CB320-TBT-001</div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Project</label>
+                        <input type="text" id="toolbox-project">
+                    </div>
+                    <div class="form-group">
+                        <label>Date</label>
+                        <input type="date" id="toolbox-date">
+                    </div>
+                    <div class="form-group">
+                        <label>Person Giving Briefing</label>
+                        <input type="text" id="toolbox-briefer">
+                    </div>
+                    <div class="form-group">
+                        <label>Job Title</label>
+                        <input type="text" id="toolbox-title">
+                    </div>
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label>Toolbox Talk Topic</label>
+                        <textarea id="toolbox-topic" placeholder="e.g. Walkways / Site rules, PPE, etc."></textarea>
+                    </div>
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label>Attendees (Names)</label>
+                        <textarea id="toolbox-attendees" placeholder="List of employees who attended briefing"></textarea>
+                    </div>
+                </div>
+
+                <div class="attachment-container">
+                    <div style="font-weight: 600; margin-bottom: 10px;">📎 Attachments</div>
+                    <label class="file-input-label-form" for="toolbox-file-input">
+                        + Add Files
+                    </label>
+                    <input type="file" id="toolbox-file-input" class="file-input-form" multiple onchange="addFormAttachment('toolbox')">
+                    <div class="attachment-list-form" id="toolbox-attachments"></div>
+                </div>
+
+                <div class="form-actions">
+                    <button class="button button-primary" onclick="submitForm('toolbox')">Submit Toolbox Talk</button>
+                    <button class="button button-secondary" onclick="emailForm('toolbox')">📧 Email</button>
+                    <button class="button button-secondary" onclick="previewPDF('toolbox')">📄 PDF</button>
+                    <button class="button" onclick="toggleForm('toolbox')">Cancel</button>
+                </div>
+            </div>
+            <div id="toolbox-register"></div>
+        </div>
+
+        <!-- LOLER FORM -->
+        <div id="loler" class="tab-content">
+            <button class="button button-primary" onclick="toggleForm('loler')">+ New LOLER Report</button>
+            <div id="loler-form" class="form-container">
+                <h3>LOLER - Lifting Operations and Lifting Equipment Regulations</h3>
+                <div class="form-number-display" id="loler-number">CB320-LOLE-001</div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Lifting Appliance Description</label>
+                        <input type="text" id="loler-description" placeholder="e.g. Mortar tubs">
+                    </div>
+                    <div class="form-group">
+                        <label>Serial Numbers</label>
+                        <input type="text" id="loler-serial" placeholder="Comma-separated list">
+                    </div>
+                    <div class="form-group">
+                        <label>SWL (Safe Working Load) kg</label>
+                        <input type="text" id="loler-swl" placeholder="e.g. 500">
+                    </div>
+                    <div class="form-group">
+                        <label>Inspection Date</label>
+                        <input type="date" id="loler-date">
+                    </div>
+                    <div class="form-group">
+                        <label>Inspector Name</label>
+                        <input type="text" id="loler-inspector">
+                    </div>
+                    <div class="form-group">
+                        <label>Can Work Proceed Safely?</label>
+                        <select id="loler-safe">
+                            <option value="Yes">Yes</option>
+                            <option value="No">No</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label>Issues Identified</label>
+                        <textarea id="loler-issues" placeholder="None"></textarea>
+                    </div>
+                </div>
+
+                <div class="attachment-container">
+                    <div style="font-weight: 600; margin-bottom: 10px;">📎 Attachments</div>
+                    <label class="file-input-label-form" for="loler-file-input">
+                        + Add Files
+                    </label>
+                    <input type="file" id="loler-file-input" class="file-input-form" multiple onchange="addFormAttachment('loler')">
+                    <div class="attachment-list-form" id="loler-attachments"></div>
+                </div>
+
+                <div class="form-actions">
+                    <button class="button button-primary" onclick="submitForm('loler')">Submit LOLER Report</button>
+                    <button class="button button-secondary" onclick="emailForm('loler')">📧 Email</button>
+                    <button class="button button-secondary" onclick="previewPDF('loler')">📄 PDF</button>
+                    <button class="button" onclick="toggleForm('loler')">Cancel</button>
+                </div>
+            </div>
+            <div id="loler-register"></div>
+        </div>
+
+        <!-- SITE AUDIT FORM -->
+        <div id="audit" class="tab-content">
+            <button class="button button-primary" onclick="toggleForm('audit')">+ New Site Audit</button>
+            <div id="audit-form" class="form-container">
+                <h3>Site Audit Report</h3>
+                <div class="form-number-display" id="audit-number">CB320-SA-001</div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Auditor</label>
+                        <input type="text" id="audit-auditor">
+                    </div>
+                    <div class="form-group">
+                        <label>Date</label>
+                        <input type="date" id="audit-date">
+                    </div>
+                    <div class="form-group">
+                        <label>Location/Area</label>
+                        <input type="text" id="audit-location">
+                    </div>
+                    <div class="form-group">
+                        <label>Assigned To</label>
+                        <input type="text" id="audit-assigned">
+                    </div>
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label>Finding Description</label>
+                        <textarea id="audit-description" placeholder="What was found during the audit..."></textarea>
+                    </div>
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label>Required Actions</label>
+                        <textarea id="audit-actions"></textarea>
+                    </div>
+                </div>
+
+                <div class="attachment-container">
+                    <div style="font-weight: 600; margin-bottom: 10px;">📎 Attachments</div>
+                    <label class="file-input-label-form" for="audit-file-input">
+                        + Add Files
+                    </label>
+                    <input type="file" id="audit-file-input" class="file-input-form" multiple onchange="addFormAttachment('audit')">
+                    <div class="attachment-list-form" id="audit-attachments"></div>
+                </div>
+
+                <div class="form-actions">
+                    <button class="button button-primary" onclick="submitForm('audit')">Submit Audit Report</button>
+                    <button class="button button-secondary" onclick="emailForm('audit')">📧 Email</button>
+                    <button class="button button-secondary" onclick="previewPDF('audit')">📄 PDF</button>
+                    <button class="button" onclick="toggleForm('audit')">Cancel</button>
+                </div>
+            </div>
+            <div id="audit-register"></div>
+        </div>
+
+        <!-- PROGRESS REPORT FORM -->
+        <div id="progress" class="tab-content">
+            <button class="button button-primary" onclick="toggleForm('progress')">+ New Progress Report</button>
+            <div id="progress-form" class="form-container">
+                <h3>Weekly Progress Report</h3>
+                <div class="form-number-display" id="progress-number">CB320-PR-001</div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Report Date</label>
+                        <input type="date" id="progress-date">
+                    </div>
+                    <div class="form-group">
+                        <label>Reporter</label>
+                        <input type="text" id="progress-reporter">
+                    </div>
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label>Location & Completed Works</label>
+                        <textarea id="progress-completed" placeholder="Core B level 8 West 1st lift brickwork completed..."></textarea>
+                    </div>
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label>Works in Progress</label>
+                        <textarea id="progress-inprogress" placeholder="Core B level 8 South 1st lift in progress..."></textarea>
+                    </div>
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label>Planned Next Week</label>
+                        <textarea id="progress-planned"></textarea>
+                    </div>
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label>Issues/Delays</label>
+                        <textarea id="progress-issues" placeholder="Scaffold adaption not completed..."></textarea>
+                    </div>
+                </div>
+
+                <div class="attachment-container">
+                    <div style="font-weight: 600; margin-bottom: 10px;">📎 Attachments</div>
+                    <label class="file-input-label-form" for="progress-file-input">
+                        + Add Files
+                    </label>
+                    <input type="file" id="progress-file-input" class="file-input-form" multiple onchange="addFormAttachment('progress')">
+                    <div class="attachment-list-form" id="progress-attachments"></div>
+                </div>
+
+                <div class="form-actions">
+                    <button class="button button-primary" onclick="submitForm('progress')">Submit Progress Report</button>
+                    <button class="button button-secondary" onclick="emailForm('progress')">📧 Email</button>
+                    <button class="button button-secondary" onclick="previewPDF('progress')">📄 PDF</button>
+                    <button class="button" onclick="toggleForm('progress')">Cancel</button>
+                </div>
+            </div>
+            <div id="progress-register"></div>
+        </div>
+
+        <!-- REPORTS TAB -->
+        <div id="reports" class="tab-content">
+            <h2 style="margin-bottom: 20px; font-size: 20px;">Master Reports (All Projects)</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px;">
+                <button class="button button-primary" style="margin-bottom: 0;" onclick="showReport('rfi')">All RFI Register</button>
+                <button class="button button-primary" style="margin-bottom: 0;" onclick="showReport('incident')">All Incidents</button>
+                <button class="button button-primary" style="margin-bottom: 0;" onclick="showReport('audit')">All Audits</button>
+                <button class="button button-primary" style="margin-bottom: 0;" onclick="showReport('safety')">Safety Overview</button>
+            </div>
+            <div id="reports-container"></div>
+        </div>
+    </div>
+
+    <!-- Email Modal -->
+    <div id="emailModal" class="email-modal">
+        <div class="email-modal-content">
+            <button class="email-modal-close" onclick="closeEmailModal()">×</button>
+            <div class="email-modal-header">Email Form to Client</div>
+            <div class="email-form-group">
+                <label>Form Number</label>
+                <input type="text" id="emailFormNumber" readonly style="background: #f5f5f5;">
+            </div>
+            <div class="email-form-group">
+                <label>Client Email Address</label>
+                <input type="email" id="emailAddress" placeholder="client@example.com">
+            </div>
+            <div class="email-form-group">
+                <label>Subject</label>
+                <input type="text" id="emailSubject" placeholder="Form submission">
+            </div>
+            <div class="email-form-group">
+                <label>Message</label>
+                <textarea id="emailMessage" placeholder="Add any additional message..."></textarea>
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button class="button button-primary" onclick="sendEmailForm()">Send Email</button>
+                <button class="button" onclick="closeEmailModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+        <div class="dashboard-detail-content">
+            <button class="dashboard-detail-close" onclick="closeDashboardDetail()">×</button>
+            <div class="dashboard-detail-header" id="dashboardDetailHeader"></div>
+            <table class="register-table" id="dashboardDetailTable">
+                <thead>
+                    <tr>
+                        <th>Form Number</th>
+                        <th>Date Raised</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="dashboardDetailBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const projects = ['CB319', 'CB320', 'CB325', 'CB337', 'CB348', 'CB354', 'CB409'];
+        const formTypes = ['rfi', 'cvi', 'delay', 'diary', 'material', 'scaffold', 'puwer', 'havs', 'dabs', 'incident', 'respirator', 'toolbox', 'loler', 'audit', 'progress'];
+
+        const database = {};
+        projects.forEach(p => {
+            database[p] = {};
+            formTypes.forEach(f => {
+                database[p][f] = [];
+            });
+        });
+
+        let currentProject = 'CB320';
+
+        function switchProject() {
+            currentProject = document.getElementById('projectSelect').value;
+            updateAllDisplays();
+        }
+
+        function switchTab(event, tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+
+            if (tabName === 'dashboard') {
+                updateDashboard();
+            } else if (tabName !== 'reports') {
+                updateRegister(tabName);
+            }
+        }
+
+        function toggleForm(formType) {
+            const form = document.getElementById(formType + '-form');
+            form.classList.toggle('open');
+            if (form.classList.contains('open')) {
+                updateFormNumber(formType);
+            }
+        }
+
+        function updateFormNumber(formType) {
+            const count = database[currentProject][formType].length;
+            const nextNum = String(count + 1).padStart(3, '0');
+            const abbrev = {
+                rfi: 'RFI', cvi: 'CVI', delay: 'DN', diary: 'DD', material: 'MR', scaffold: 'SR',
+                puwer: 'PW', havs: 'HA', dabs: 'DB', incident: 'INC', respirator: 'RF', 
+                toolbox: 'TBT', loler: 'LOLE', audit: 'SA', progress: 'PR'
+            };
+            document.getElementById(formType + '-number').textContent = `${currentProject}-${abbrev[formType]}-${nextNum}`;
+        }
+
+        function submitForm(formType) {
+            const today = new Date().toLocaleDateString('en-GB');
+            const statusEl = document.getElementById(formType + '-status');
+            const status = statusEl ? statusEl.value : 'Submitted';
+            const formNumber = document.getElementById(formType + '-number').textContent;
+
+            const formData = {
+                number: formNumber,
+                dateRaised: today,
+                status: status,
+                details: {}
+            };
+
+            // Collect form fields
+            const inputs = document.querySelectorAll(`#${formType}-form input, #${formType}-form textarea, #${formType}-form select`);
+            inputs.forEach(input => {
+                if (input.id && input.id !== `${formType}-status`) {
+                    const key = input.id.replace(`${formType}-`, '');
+                    formData.details[key] = input.value;
+                }
+            });
+
+            database[currentProject][formType].push(formData);
+            toggleForm(formType);
+            clearForm(formType);
+            updateRegister(formType);
+            updateDashboard();
+
+            const register = document.getElementById(formType + '-register');
+            const msg = document.createElement('div');
+            msg.className = 'success-message';
+            msg.innerHTML = `✓ <strong>${formNumber}</strong> submitted! 
+                <button class="button button-secondary" style="margin-left: 10px; padding: 5px 12px; font-size: 12px;" onclick="openEmailModal('${formType}', '${formNumber}')">📧 Email</button>
+                <button class="button button-secondary" style="margin-left: 5px; padding: 5px 12px; font-size: 12px;" onclick="downloadPDF('${formType}', '${formNumber}')">📄 PDF</button>`;
+            register.insertBefore(msg, register.firstChild);
+            setTimeout(() => msg.remove(), 5000);
+        }
+
+        function clearForm(formType) {
+            document.querySelectorAll(`#${formType}-form input, #${formType}-form textarea`).forEach(el => el.value = '');
+        }
+
+        function updateRegister(formType) {
+            const data = database[currentProject][formType];
+            const container = document.getElementById(formType + '-register');
+
+            if (data.length === 0) {
+                container.innerHTML = '<div class="empty-state">No records yet</div>';
+                return;
+            }
+
+            let html = '<table class="register-table"><thead><tr><th>Form Number</th><th>Date</th><th>Status</th></tr></thead><tbody>';
+            data.forEach(form => {
+                html += `<tr><td><strong>${form.number}</strong></td><td>${form.dateRaised}</td><td><span class="status-badge ${form.status.toLowerCase()}">${form.status}</span></td></tr>`;
+            });
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        function updateDashboard() {
+            const formLabels = {
+                rfi: 'RFI', cvi: 'CVI', delay: 'Delay Notice', diary: 'Daily Diary', 
+                material: 'Material Request', scaffold: 'Scaffold Request',
+                puwer: 'PUWER', havs: 'HAVS', dabs: 'DABS', incident: 'Incident Report', 
+                respirator: 'Respirator Test', toolbox: 'Toolbox Talk', 
+                loler: 'LOLER', audit: 'Site Audit', progress: 'Progress Report'
+            };
+
+            let html = '';
+            formTypes.forEach(type => {
+                const data = database[currentProject][type];
+                const raised = data.length;
+                const open = data.filter(f => f.status === 'Open').length;
+                const closed = data.filter(f => f.status === 'Resolved').length;
+
+                html += `<tr>
+                    <td class="form-name">${formLabels[type]}</td>
+                    <td class="count-cell" onclick="showDashboardDetail('${type}', 'all')"><span class="count-raised">${raised}</span></td>
+                    <td class="count-cell" onclick="showDashboardDetail('${type}', 'Open')"><span class="count-open">${open}</span></td>
+                    <td class="count-cell" onclick="showDashboardDetail('${type}', 'Resolved')"><span class="count-closed">${closed}</span></td>
+                </tr>`;
+            });
+
+            document.getElementById('dashboardBody').innerHTML = html;
+        }
+
+        function showDashboardDetail(formType, status) {
+            const formLabels = {
+                rfi: 'RFI', cvi: 'CVI', delay: 'Delay Notice', diary: 'Daily Diary', 
+                material: 'Material Request', scaffold: 'Scaffold Request',
+                puwer: 'PUWER', havs: 'HAVS', dabs: 'DABS', incident: 'Incident Report', 
+                respirator: 'Respirator Test', toolbox: 'Toolbox Talk', 
+                loler: 'LOLER', audit: 'Site Audit', progress: 'Progress Report'
+            };
+
+            let data = database[currentProject][formType];
+            
+            // Filter by status
+            if (status !== 'all') {
+                data = data.filter(f => f.status === status);
+            }
+
+            // Build header
+            let headerText = formLabels[formType];
+            if (status !== 'all') {
+                headerText += ` - ${status}`;
+            }
+            document.getElementById('dashboardDetailHeader').textContent = headerText;
+
+            // Build table
+            let html = '';
+            if (data.length === 0) {
+                html = '<tr><td colspan="3" style="text-align: center; padding: 20px; color: #999;">No forms</td></tr>';
+            } else {
+                data.forEach(form => {
+                    html += `<tr>
+                        <td><strong>${form.number}</strong></td>
+                        <td>${form.dateRaised}</td>
+                        <td><span class="status-badge ${form.status.toLowerCase()}">${form.status}</span></td>
+                    </tr>`;
+                });
+            }
+            document.getElementById('dashboardDetailBody').innerHTML = html;
+
+            // Show modal
+            document.getElementById('dashboardDetailModal').classList.add('open');
+        }
+
+        function closeDashboardDetail() {
+            document.getElementById('dashboardDetailModal').classList.remove('open');
+        }
+
+        function updateAllDisplays() {
+            updateDashboard();
+            formTypes.forEach(f => {
+                if (document.getElementById(f + '-register')) {
+                    updateRegister(f);
+                }
+            });
+        }
+
+        function showReport(type) {
+            const container = document.getElementById('reports-container');
+            let allData = [];
+            projects.forEach(p => {
+                database[p][type].forEach(form => {
+                    allData.push({ ...form, project: p });
+                });
+            });
+
+            if (allData.length === 0) {
+                container.innerHTML = '<div class="empty-state">No data</div>';
+                return;
+            }
+
+            let html = `<h3>${type.toUpperCase()} - All Projects</h3><table class="register-table"><thead><tr><th>Form</th><th>Project</th><th>Date</th><th>Status</th></tr></thead><tbody>`;
+            allData.forEach(form => {
+                html += `<tr><td>${form.number}</td><td>${form.project}</td><td>${form.dateRaised}</td><td><span class="status-badge ${form.status.toLowerCase()}">${form.status}</span></td></tr>`;
+            });
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        let formAttachments = {};
+
+        function addFormAttachment(formType) {
+            const fileInput = document.getElementById(formType + '-file-input');
+            const files = fileInput.files;
+
+            if (!formAttachments[formType]) {
+                formAttachments[formType] = [];
+            }
+
+            for (let file of files) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const attachment = {
+                        name: file.name,
+                        size: formatFileSize(file.size),
+                        data: e.target.result
+                    };
+                    formAttachments[formType].push(attachment);
+                    renderFormAttachments(formType);
+                };
+                reader.readAsArrayBuffer(file);
+            }
+            fileInput.value = '';
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+
+        function renderFormAttachments(formType) {
+            const container = document.getElementById(formType + '-attachments');
+            container.innerHTML = '';
+
+            if (!formAttachments[formType] || formAttachments[formType].length === 0) {
+                return;
+            }
+
+            formAttachments[formType].forEach((attachment, index) => {
+                const div = document.createElement('div');
+                div.className = 'attachment-item-form';
+                div.innerHTML = `
+                    <div class="attachment-name-form">${attachment.name}</div>
+                    <div class="attachment-size-form">${attachment.size}</div>
+                    <button class="remove-btn" onclick="removeFormAttachment('${formType}', ${index})">Remove</button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function removeFormAttachment(formType, index) {
+            if (formAttachments[formType]) {
+                formAttachments[formType].splice(index, 1);
+                renderFormAttachments(formType);
+            }
+        }
+
+        function emailForm(formType) {
+            const formNumber = document.getElementById(formType + '-number').textContent;
+            openEmailModal(formType, formNumber);
+        }
+
+        function previewPDF(formType) {
+            // Collect current form data
+            const inputs = document.querySelectorAll(`#${formType}-form input, #${formType}-form textarea, #${formType}-form select`);
+            const formData = { details: {} };
+            inputs.forEach(input => {
+                if (input.id && !input.id.endsWith('-file-input')) {
+                    const key = input.id.replace(`${formType}-`, '');
+                    formData.details[key] = input.value;
+                }
+            });
+            
+            const formNumber = document.getElementById(formType + '-number').textContent;
+            formData.number = formNumber;
+            formData.dateRaised = new Date().toLocaleDateString('en-GB');
+            formData.status = 'Draft';
+
+            downloadPDFFromForm(formType, formData);
+        }
+
+        function downloadPDFFromForm(formType, formData) {
+            const formLabels = {
+                rfi: 'Request for Information', cvi: 'CVI', delay: 'Delay Notice', diary: 'Daily Diary', 
+                material: 'Material Request', scaffold: 'Scaffold Request',
+                puwer: 'PUWER', havs: 'HAVS', dabs: 'DABS', incident: 'Incident Report', 
+                respirator: 'Respirator Test', toolbox: 'Toolbox Talk', 
+                loler: 'LOLER', audit: 'Site Audit', progress: 'Progress Report'
+            };
+
+            let htmlContent = `<!DOCTYPE html><html><head><style>body{font-family:Arial,sans-serif;margin:20px;color:#333}.header{border-bottom:2px solid #0066cc;padding-bottom:15px;margin-bottom:20px}.logo{font-size:20px;font-weight:700;color:#0066cc;margin-bottom:5px}.form-title{font-size:24px;font-weight:700;margin:20px 0}.form-number{background:#f5f5f5;padding:10px;border-radius:4px;font-weight:600;margin:15px 0;font-family:monospace}.section{margin:25px 0}.section-title{font-size:13px;font-weight:700;text-transform:uppercase;color:#666;border-bottom:1px solid #ddd;padding-bottom:10px;margin-bottom:15px}.field{margin-bottom:15px}.field-label{font-weight:600;font-size:13px;color:#333;margin-bottom:5px}.field-value{padding:8px;background:#fafafa;border:1px solid #eee;border-radius:4px;word-wrap:break-word}.status{display:inline-block;padding:4px 10px;border-radius:4px;font-size:12px;font-weight:700}.status-draft{background:#f0f0f0;color:#666}.status-issued{background:#e3f2fd;color:#1976d2}.status-open{background:#fff3e0;color:#e65100}.status-resolved{background:#e8f5e9;color:#2e7d32}.footer{margin-top:40px;padding-top:15px;border-top:1px solid #ddd;font-size:12px;color:#999}</style></head><body><div class="header"><div class="logo">Chine Brickwork</div><div>Project: ${currentProject}</div></div><div class="form-title">${formLabels[formType]}</div><div class="form-number">Form Number: ${formData.number}</div><div class="section"><div class="field"><div class="field-label">Date</div><div class="field-value">${formData.dateRaised}</div></div><div class="field"><div class="field-label">Status</div><div class="field-value"><span class="status status-${formData.status.toLowerCase()}">${formData.status}</span></div></div></div><div class="section"><div class="section-title">Form Details</div>${Object.entries(formData.details).filter(([k,v]) => v && k !== 'status').map(([key, value]) => {const label = key.charAt(0).toUpperCase() + key.slice(1).replace(/-/g, ' ');return `<div class="field"><div class="field-label">${label}</div><div class="field-value">${value}</div></div>`;}).join('')}</div><div class="footer"><p>Generated: ${new Date().toLocaleString()}</p><p>Chine Brickwork Form Management System</p></div></body></html>`;
+
+            const printWindow = window.open('', '', 'width=800,height=600');
+            printWindow.document.write(htmlContent);
+            printWindow.document.close();
+            printWindow.print();
+        }
+
+        function openEmailModal(formType, formNumber) {
+            document.getElementById('emailFormNumber').value = formNumber;
+            document.getElementById('emailSubject').value = `${formNumber} - Form Submission`;
+            document.getElementById('emailMessage').value = `Please find the attached form ${formNumber}. Please review and respond accordingly.`;
+            document.getElementById('emailModal').classList.add('open');
+            window.emailFormType = formType;
+            window.emailFormNumber = formNumber;
+        }
+
+        function closeEmailModal() {
+            document.getElementById('emailModal').classList.remove('open');
+        }
+
+        function sendEmailForm() {
+            const email = document.getElementById('emailAddress').value;
+            const subject = document.getElementById('emailSubject').value;
+            const message = document.getElementById('emailMessage').value;
+
+            if (!email) {
+                alert('Please enter a client email address');
+                return;
+            }
+
+            if (!email.includes('@')) {
+                alert('Please enter a valid email address');
+                return;
+            }
+
+            const mailtoLink = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message + '\n\n---\nForm Number: ' + window.emailFormNumber + '\nProject: ' + currentProject + '\nDate: ' + new Date().toLocaleDateString())}`;
+            window.location.href = mailtoLink;
+            alert('Email compose window opened. Please send the email and attach the PDF file.');
+            closeEmailModal();
+        }
+
+        function downloadPDF(formType, formNumber) {
+            const formData = database[currentProject][formType].find(f => f.number === formNumber);
+            if (!formData) return;
+
+            const formLabels = {
+                rfi: 'Request for Information', cvi: 'CVI', delay: 'Delay Notice', diary: 'Daily Diary', 
+                material: 'Material Request', scaffold: 'Scaffold Request',
+                puwer: 'PUWER', havs: 'HAVS', dabs: 'DABS', incident: 'Incident Report', 
+                respirator: 'Respirator Test', toolbox: 'Toolbox Talk', 
+                loler: 'LOLER', audit: 'Site Audit', progress: 'Progress Report'
+            };
+
+            let htmlContent = `<!DOCTYPE html><html><head><style>body{font-family:Arial,sans-serif;margin:20px;color:#333}.header{border-bottom:2px solid #0066cc;padding-bottom:15px;margin-bottom:20px}.logo{font-size:20px;font-weight:700;color:#0066cc;margin-bottom:5px}.form-title{font-size:24px;font-weight:700;margin:20px 0}.form-number{background:#f5f5f5;padding:10px;border-radius:4px;font-weight:600;margin:15px 0;font-family:monospace}.section{margin:25px 0}.section-title{font-size:13px;font-weight:700;text-transform:uppercase;color:#666;border-bottom:1px solid #ddd;padding-bottom:10px;margin-bottom:15px}.field{margin-bottom:15px}.field-label{font-weight:600;font-size:13px;color:#333;margin-bottom:5px}.field-value{padding:8px;background:#fafafa;border:1px solid #eee;border-radius:4px}.status{display:inline-block;padding:4px 10px;border-radius:4px;font-size:12px;font-weight:700}.status-issued{background:#e3f2fd;color:#1976d2}.status-open{background:#fff3e0;color:#e65100}.status-resolved{background:#e8f5e9;color:#2e7d32}.footer{margin-top:40px;padding-top:15px;border-top:1px solid #ddd;font-size:12px;color:#999}</style></head><body><div class="header"><div class="logo">Chine Brickwork</div><div>Project: ${currentProject}</div></div><div class="form-title">${formLabels[formType]}</div><div class="form-number">Form Number: ${formNumber}</div><div class="section"><div class="field"><div class="field-label">Date Raised</div><div class="field-value">${formData.dateRaised}</div></div><div class="field"><div class="field-label">Status</div><div class="field-value"><span class="status status-${formData.status.toLowerCase()}">${formData.status}</span></div></div></div><div class="section"><div class="section-title">Form Details</div>${Object.entries(formData.details).map(([key, value]) => {const label = key.charAt(0).toUpperCase() + key.slice(1).replace(/-/g, ' ');return `<div class="field"><div class="field-label">${label}</div><div class="field-value">${value || '-'}</div></div>`;}).join('')}</div><div class="footer"><p>Generated: ${new Date().toLocaleString()}</p><p>Chine Brickwork Form Management System</p></div></body></html>`;
+
+            const printWindow = window.open('', '', 'width=800,height=600');
+            printWindow.document.write(htmlContent);
+            printWindow.document.close();
+            printWindow.print();
+        }
+
+        function openEmailModal(formType, formNumber) {
+            document.getElementById('emailFormNumber').value = formNumber;
+            document.getElementById('emailSubject').value = `${formNumber} - Form Submission`;
+            document.getElementById('emailMessage').value = `Please find the attached form ${formNumber}. Please review and respond accordingly.`;
+            document.getElementById('emailModal').classList.add('open');
+            window.emailFormType = formType;
+            window.emailFormNumber = formNumber;
+        }
+
+        function closeEmailModal() {
+            document.getElementById('emailModal').classList.remove('open');
+        }
+
+        function sendEmailForm() {
+            const email = document.getElementById('emailAddress').value;
+            const subject = document.getElementById('emailSubject').value;
+            const message = document.getElementById('emailMessage').value;
+
+            if (!email) {
+                alert('Please enter a client email address');
+                return;
+            }
+
+            if (!email.includes('@')) {
+                alert('Please enter a valid email address');
+                return;
+            }
+
+            const mailtoLink = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message + '\n\n---\nForm Number: ' + window.emailFormNumber + '\nProject: ' + currentProject + '\nDate: ' + new Date().toLocaleDateString())}`;
+            window.location.href = mailtoLink;
+            alert('Email compose window opened. Please send the email and attach the PDF file.');
+            closeEmailModal();
+        }
+
+        function downloadPDF(formType, formNumber) {
+            const formData = database[currentProject][formType].find(f => f.number === formNumber);
+            if (!formData) return;
+
+            const formLabels = {
+                rfi: 'Request for Information', cvi: 'CVI', delay: 'Delay Notice', diary: 'Daily Diary', 
+                material: 'Material Request', scaffold: 'Scaffold Request',
+                puwer: 'PUWER', havs: 'HAVS', dabs: 'DABS', incident: 'Incident Report', 
+                respirator: 'Respirator Test', toolbox: 'Toolbox Talk', 
+                loler: 'LOLER', audit: 'Site Audit', progress: 'Progress Report'
+            };
+
+            let htmlContent = `<!DOCTYPE html><html><head><style>body{font-family:Arial,sans-serif;margin:20px;color:#333}.header{border-bottom:2px solid #0066cc;padding-bottom:15px;margin-bottom:20px}.logo{font-size:20px;font-weight:700;color:#0066cc;margin-bottom:5px}.form-title{font-size:24px;font-weight:700;margin:20px 0}.form-number{background:#f5f5f5;padding:10px;border-radius:4px;font-weight:600;margin:15px 0;font-family:monospace}.section{margin:25px 0}.section-title{font-size:13px;font-weight:700;text-transform:uppercase;color:#666;border-bottom:1px solid #ddd;padding-bottom:10px;margin-bottom:15px}.field{margin-bottom:15px}.field-label{font-weight:600;font-size:13px;color:#333;margin-bottom:5px}.field-value{padding:8px;background:#fafafa;border:1px solid #eee;border-radius:4px}.status{display:inline-block;padding:4px 10px;border-radius:4px;font-size:12px;font-weight:700}.status-issued{background:#e3f2fd;color:#1976d2}.status-open{background:#fff3e0;color:#e65100}.status-resolved{background:#e8f5e9;color:#2e7d32}.footer{margin-top:40px;padding-top:15px;border-top:1px solid #ddd;font-size:12px;color:#999}</style></head><body><div class="header"><div class="logo">Chine Brickwork</div><div>Project: ${currentProject}</div></div><div class="form-title">${formLabels[formType]}</div><div class="form-number">Form Number: ${formNumber}</div><div class="section"><div class="field"><div class="field-label">Date Raised</div><div class="field-value">${formData.dateRaised}</div></div><div class="field"><div class="field-label">Status</div><div class="field-value"><span class="status status-${formData.status.toLowerCase()}">${formData.status}</span></div></div></div><div class="section"><div class="section-title">Form Details</div>${Object.entries(formData.details).map(([key, value]) => {const label = key.charAt(0).toUpperCase() + key.slice(1).replace(/-/g, ' ');return `<div class="field"><div class="field-label">${label}</div><div class="field-value">${value || '-'}</div></div>`;}).join('')}</div><div class="footer"><p>Generated: ${new Date().toLocaleString()}</p><p>Chine Brickwork Form Management System</p></div></body></html>`;
+
+            const printWindow = window.open('', '', 'width=800,height=600');
+            printWindow.document.write(htmlContent);
+            printWindow.document.close();
+            printWindow.print();
+        }
+
+        // Initialize
+        updateDashboard();
+    </script>
+</body>
+</html>
