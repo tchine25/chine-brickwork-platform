@@ -289,6 +289,10 @@
         <option value="5c">5c. Live Jobs</option>
       </select>
       <input id="ov-search" placeholder="🔍  Search jobs, contractors, CB numbers..." oninput="renderOverview()" style="flex:1;font-size:13px;padding:8px 14px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--bg-primary);color:var(--text-primary)">
+      <select id="ov-sort" onchange="renderOverview()" style="font-size:13px;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--bg-primary);color:var(--text-primary)">
+        <option value="date">Sort: Date</option>
+        <option value="cb">Sort: CB number</option>
+      </select>
       <button onclick="document.getElementById('ov-search').value='';document.getElementById('ov-folder').value='';renderOverview()" class="btn" style="font-size:12px">Clear</button>
     </div>
     <div id="ov-search-results" style="display:none;margin-bottom:14px">
@@ -1176,10 +1180,13 @@ function renderOverview(){
   }
   document.getElementById('ov-search-results').style.display='none';
   document.getElementById('ov-columns').style.display='grid';
+  const sortMode=(document.getElementById('ov-sort')||{value:'date'}).value;
+  const cbNum=j=>parseInt((j.cb||j.id||'').replace(/\D/g,''))||9999999;
+  const sorter=sortMode==='cb'?(a,b)=>cbNum(a)-cbNum(b):(a,b)=>dateSortVal(a.nextDate)-dateSortVal(b.nextDate);
   const visibleJobs=jobs.filter(folderFilter);
-  const ov=visibleJobs.filter(j=>j.status==='overdue').sort((a,b)=>dateSortVal(a.nextDate)-dateSortVal(b.nextDate));
-  const wk=visibleJobs.filter(j=>j.status==='week').sort((a,b)=>dateSortVal(a.nextDate)-dateSortVal(b.nextDate));
-  const ok=visibleJobs.filter(j=>j.status==='ok').sort((a,b)=>dateSortVal(a.nextDate)-dateSortVal(b.nextDate)).slice(0,10);
+  const ov=visibleJobs.filter(j=>j.status==='overdue').sort(sorter);
+  const wk=visibleJobs.filter(j=>j.status==='week').sort(sorter);
+  const ok=visibleJobs.filter(j=>j.status==='ok').sort(sorter).slice(0,10);
   document.getElementById('ov-overdue').innerHTML=ov.map(mkLi).join('');
   document.getElementById('ov-week').innerHTML=wk.map(mkLi).join('');
   document.getElementById('ov-ok').innerHTML=ok.map(mkLi).join('');
