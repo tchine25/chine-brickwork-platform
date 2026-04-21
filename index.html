@@ -1543,7 +1543,8 @@ function liveStatusUpdate(dateVal){
   document.getElementById('m-info').innerHTML=buildInfoHtml(jobId,calcStatus(dateVal));
 }
 function renderJobTimeline(j){
-  const sorted=[...j.comms].sort((a,b)=>new Date(b.d.split('/').reverse().join('-'))-new Date(a.d.split('/').reverse().join('-')));
+  const commDate=s=>{if(!s)return 0;const p=s.split('/');if(p.length!==3)return 0;const yr=p[2].length===2?2000+parseInt(p[2]):parseInt(p[2]);return yr*10000+parseInt(p[1])*100+parseInt(p[0]);};
+  const sorted=[...j.comms].sort((a,b)=>commDate(b.d)-commDate(a.d));
   document.getElementById('m-tl').innerHTML=sorted.length?sorted.map(c=>`
     <li class="tl-item" id="tl-item-${c.id}">
       <div class="tl-left"><div class="tl-dot" style="background:${TC2[c.type]}"></div><div class="tl-line"></div></div>
