@@ -315,10 +315,6 @@
         <ul class="jlist" id="ov-ok"></ul>
       </div>
     </div>
-    <div class="card" id="fut-chaseboard" style="display:none;margin-bottom:14px">
-      <div class="card-hdr"><span class="card-title">Future opportunity chase-ups</span><span class="bdg" style="background:#eeedfe;color:#3c3489" id="badge-fut-chase">0</span></div>
-      <ul class="jlist" id="ov-fut-chase"></ul>
-    </div>
   </div>
 
   <div id="c-pipeline" class="pg">
@@ -1184,22 +1180,26 @@ function renderOverview(){
   const cbNum=j=>parseInt((j.cb||j.id||'').replace(/\D/g,''))||9999999;
   const sorter=sortMode==='cb'?(a,b)=>cbNum(a)-cbNum(b):(a,b)=>dateSortVal(a.nextDate)-dateSortVal(b.nextDate);
   const visibleJobs=jobs.filter(folderFilter);
+  // Future opp projects with a next_date — rendered as list items alongside jobs
+  const mkOppLi=p=>{const s=calcStatus(p.nextDate);return`<li class="ji-ov" onclick="openOppFromOverview('${p.oppId}','${p.id}')">
+    <div class="dot ${dc[s]}" style="margin-top:1px"></div>
+    <div><div class="jname" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.name} <span style="font-weight:400;color:var(--text-secondary)">· ${p.contractor}</span></div><div class="jdesc" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.action||''}</div></div>
+    <div></div>
+    <div><span style="font-size:10px;background:#eeedfe;color:#3c3489;border-radius:3px;padding:1px 5px;font-weight:500;white-space:nowrap">Fut Opp</span></div>
+    <div class="jdate ${dtc[s]}" style="text-align:right">${p.nextDate.slice(0,5)}</div>
+  </li>`;};
+  const oppProjs=futOpps.flatMap(o=>o.projects.filter(p=>p.nextDate).map(p=>({...p,contractor:o.contractor||o.con||''})));
+  const oppOv=oppProjs.filter(p=>calcStatus(p.nextDate)==='overdue');
+  const oppWk=oppProjs.filter(p=>calcStatus(p.nextDate)==='week');
+  const oppOk=oppProjs.filter(p=>calcStatus(p.nextDate)==='ok');
+  const dateSorter=(a,b)=>dateSortVal(a.nextDate)-dateSortVal(b.nextDate);
   const ov=visibleJobs.filter(j=>j.status==='overdue').sort(sorter);
   const wk=visibleJobs.filter(j=>j.status==='week').sort(sorter);
   const ok=visibleJobs.filter(j=>j.status==='ok').sort(sorter).slice(0,10);
-  document.getElementById('ov-overdue').innerHTML=ov.map(mkLi).join('');
-  document.getElementById('ov-week').innerHTML=wk.map(mkLi).join('');
-  document.getElementById('ov-ok').innerHTML=ok.map(mkLi).join('');
-  document.getElementById('badge-ok').textContent=visibleJobs.filter(j=>j.status==='ok').length+' jobs';
-  const chaseProjs=futOpps.flatMap(o=>o.projects.filter(p=>p.nextDate)).filter(p=>{const s=calcStatus(p.nextDate);return s==='overdue'||s==='week';}).sort((a,b)=>dateSortVal(a.nextDate)-dateSortVal(b.nextDate));
-  const board=document.getElementById('fut-chaseboard');
-  if(chaseProjs.length){
-    board.style.display='block';
-    document.getElementById('badge-fut-chase').textContent=chaseProjs.length;
-    document.getElementById('ov-fut-chase').innerHTML=chaseProjs.map(p=>{const s=calcStatus(p.nextDate);return`<li class="ji" onclick="openOppFromOverview('${p.oppId}','${p.id}')"><div class="dot ${dc[s]}"></div><div style="flex:1"><div class="jname">${p.name} <span style="font-weight:400;color:var(--text-secondary)">· ${p.contractor}</span></div><div class="jdesc">${p.action}</div></div><div class="jdate ${dtc[s]}">${p.nextDate.slice(0,5)}</div></li>`;}).join('');
-  }else{
-    board.style.display='none';
-  }
+  document.getElementById('ov-overdue').innerHTML=ov.map(mkLi).join('')+oppOv.sort(dateSorter).map(mkOppLi).join('');
+  document.getElementById('ov-week').innerHTML=wk.map(mkLi).join('')+oppWk.sort(dateSorter).map(mkOppLi).join('');
+  document.getElementById('ov-ok').innerHTML=ok.map(mkLi).join('')+oppOk.sort(dateSorter).map(mkOppLi).join('');
+  document.getElementById('badge-ok').textContent=(visibleJobs.filter(j=>j.status==='ok').length+oppOk.length)+' jobs';
 }
 function dateSortVal(d){if(!d)return 9999999;const p=d.split('/');return p.length===3?parseInt(p[2])*10000+parseInt(p[1])*100+parseInt(p[0]):9999999;}
 
