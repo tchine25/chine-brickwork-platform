@@ -3,8 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chine Brickwork Complete Management System</title>
+    <title>Chine Brickwork — Construction Platform</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
+        /* LOGIN */
+        #cp-login{position:fixed;inset:0;background:#f3f4f6;display:flex;align-items:center;justify-content:center;z-index:9999}
+        #cp-login.hidden{display:none}
+        .cp-login-box{background:white;border-radius:10px;padding:40px;width:360px;box-shadow:0 4px 20px rgba(0,0,0,0.1)}
+        .cp-login-box h2{font-size:20px;font-weight:700;margin-bottom:6px;color:#1a1a1a}
+        .cp-login-box p{font-size:13px;color:#666;margin-bottom:24px}
+        .cp-login-box label{display:block;font-size:13px;font-weight:600;margin-bottom:5px;color:#333}
+        .cp-login-box input{width:100%;padding:10px;border:1px solid #ddd;border-radius:5px;font-size:14px;margin-bottom:16px}
+        .cp-login-box input:focus{outline:none;border-color:#0066cc}
+        .cp-login-btn{width:100%;padding:11px;background:#0066cc;color:white;border:none;border-radius:5px;font-size:14px;font-weight:600;cursor:pointer}
+        .cp-login-btn:hover{background:#0052a3}
+        .cp-login-err{color:#d32f2f;font-size:13px;margin-top:10px;display:none}
+        #cp-signout{position:fixed;top:16px;right:20px;z-index:1000;padding:7px 14px;background:white;border:1px solid #ddd;border-radius:5px;font-size:13px;cursor:pointer;font-weight:600}
+        #cp-signout:hover{background:#f5f5f5}
+        #cp-user-label{position:fixed;top:16px;right:110px;z-index:1000;font-size:13px;color:#666;padding-top:8px}
         * {
             margin: 0;
             padding: 0;
@@ -659,7 +675,23 @@
     </style>
 </head>
 <body>
-    <div class="container">
+    <!-- LOGIN SCREEN -->
+    <div id="cp-login">
+      <div class="cp-login-box">
+        <h2>Construction Platform</h2>
+        <p>Chine Brickwork — authorised users only</p>
+        <label>Email</label>
+        <input type="email" id="cp-email" placeholder="your@chinebrickwork.co.uk">
+        <label>Password</label>
+        <input type="password" id="cp-password" placeholder="Password">
+        <button class="cp-login-btn" onclick="cpLogin()">Sign in</button>
+        <div class="cp-login-err" id="cp-err">Access denied or incorrect credentials.</div>
+      </div>
+    </div>
+    <span id="cp-user-label"></span>
+    <button id="cp-signout" onclick="cpSignOut()" style="display:none">Sign out</button>
+
+    <div class="container" id="cp-app" style="display:none">
         <header>
             <h1>Chine Brickwork Complete Management System</h1>
             <div class="header-controls">
@@ -1630,13 +1662,9 @@
         const projects = ['CB319', 'CB320', 'CB325', 'CB337', 'CB348', 'CB354', 'CB409'];
         const formTypes = ['rfi', 'cvi', 'delay', 'diary', 'material', 'scaffold', 'puwer', 'havs', 'dabs', 'incident', 'respirator', 'toolbox', 'loler', 'audit', 'progress'];
 
+        // database object kept for PDF/email functions that reference it locally
         const database = {};
-        projects.forEach(p => {
-            database[p] = {};
-            formTypes.forEach(f => {
-                database[p][f] = [];
-            });
-        });
+        projects.forEach(p => { database[p] = {}; formTypes.forEach(f => { database[p][f] = []; }); });
 
         let currentProject = 'CB320';
 
@@ -1666,14 +1694,10 @@
             }
         }
 
-        function updateFormNumber(formType) {
-            const count = database[currentProject][formType].length;
-            const nextNum = String(count + 1).padStart(3, '0');
-            const abbrev = {
-                rfi: 'RFI', cvi: 'CVI', delay: 'DN', diary: 'DD', material: 'MR', scaffold: 'SR',
-                puwer: 'PW', havs: 'HA', dabs: 'DB', incident: 'INC', respirator: 'RF', 
-                toolbox: 'TBT', loler: 'LOLE', audit: 'SA', progress: 'PR'
-            };
+        async function updateFormNumber(formType) {
+            const abbrev = { rfi:'RFI',cvi:'CVI',delay:'DN',diary:'DD',material:'MR',scaffold:'SR',puwer:'PW',havs:'HA',dabs:'DB',incident:'INC',respirator:'RF',toolbox:'TBT',loler:'LOLE',audit:'SA',progress:'PR' };
+            const { count } = await sb.from('construction_forms').select('*',{count:'exact',head:true}).eq('project',currentProject).eq('form_type',formType);
+            const nextNum = String((count||0)+1).padStart(3,'0');
             document.getElementById(formType + '-number').textContent = `${currentProject}-${abbrev[formType]}-${nextNum}`;
         }
 
@@ -2050,8 +2074,133 @@
             printWindow.print();
         }
 
-        // Initialize
-        updateDashboard();
+        // ── Supabase + Auth ───────────────────────────────────────────────────────
+        const SUPABASE_URL = 'https://tfavnmgmhdpijnbmxexr.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRmYXZubWdtaGRwaWpuYm14ZXhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDEzNjksImV4cCI6MjA5MTMxNzM2OX0.6yCK42RWKUYbubALri7D7eEmU9k4xlipoHrlNk4ZtWU';
+        const ALLOWED = ['tim.chase@chinebrickwork.co.uk','phil.watson@chinebrickwork.co.uk'];
+        const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let cpUser = null;
+
+        async function cpLogin() {
+            const email = document.getElementById('cp-email').value.trim().toLowerCase();
+            const password = document.getElementById('cp-password').value;
+            const err = document.getElementById('cp-err');
+            err.style.display = 'none';
+            if (!ALLOWED.includes(email)) { err.style.display = 'block'; err.textContent = 'Access denied — your account is not authorised for this platform.'; return; }
+            const { data, error } = await sb.auth.signInWithPassword({ email, password });
+            if (error) { err.style.display = 'block'; err.textContent = 'Incorrect email or password.'; return; }
+            cpUser = data.user;
+            showCpApp();
+        }
+
+        async function cpSignOut() {
+            await sb.auth.signOut();
+            cpUser = null;
+            document.getElementById('cp-login').classList.remove('hidden');
+            document.getElementById('cp-app').style.display = 'none';
+            document.getElementById('cp-signout').style.display = 'none';
+            document.getElementById('cp-user-label').textContent = '';
+            document.getElementById('cp-email').value = '';
+            document.getElementById('cp-password').value = '';
+        }
+
+        function showCpApp() {
+            document.getElementById('cp-login').classList.add('hidden');
+            document.getElementById('cp-app').style.display = 'block';
+            document.getElementById('cp-signout').style.display = 'block';
+            document.getElementById('cp-user-label').textContent = cpUser.email.split('@')[0];
+            updateDashboard();
+        }
+
+        // Check existing session on load
+        sb.auth.getSession().then(({ data: { session } }) => {
+            if (session && ALLOWED.includes(session.user.email)) {
+                cpUser = session.user;
+                showCpApp();
+            }
+        });
+
+        // Allow Enter key on login
+        document.getElementById('cp-password').addEventListener('keydown', e => { if (e.key === 'Enter') cpLogin(); });
+
+        // ── Override submitForm to save to Supabase ───────────────────────────────
+        async function submitForm(formType) {
+            if (!cpUser) return;
+            const today = new Date().toLocaleDateString('en-GB');
+            const statusEl = document.getElementById(formType + '-status');
+            const status = statusEl ? statusEl.value : 'Submitted';
+
+            // Count existing for this project/type to get next number
+            const { count } = await sb.from('construction_forms').select('*', { count: 'exact', head: true })
+                .eq('project', currentProject).eq('form_type', formType);
+            const abbrev = { rfi:'RFI',cvi:'CVI',delay:'DN',diary:'DD',material:'MR',scaffold:'SR',puwer:'PW',havs:'HA',dabs:'DB',incident:'INC',respirator:'RF',toolbox:'TBT',loler:'LOLE',audit:'SA',progress:'PR' };
+            const formNumber = `${currentProject}-${abbrev[formType]}-${String((count||0)+1).padStart(3,'0')}`;
+
+            const details = {};
+            document.querySelectorAll(`#${formType}-form input, #${formType}-form textarea, #${formType}-form select`).forEach(input => {
+                if (input.id && input.id !== `${formType}-status` && !input.id.endsWith('-file-input')) {
+                    details[input.id.replace(`${formType}-`, '')] = input.value;
+                }
+            });
+
+            const { error } = await sb.from('construction_forms').insert({
+                project: currentProject, form_type: formType, form_number: formNumber,
+                date_raised: today, status, details, submitted_by: cpUser.email
+            });
+
+            if (error) { alert('Error saving form: ' + error.message); return; }
+
+            toggleForm(formType);
+            clearForm(formType);
+            await updateRegister(formType);
+            await updateDashboard();
+
+            const register = document.getElementById(formType + '-register');
+            const msg = document.createElement('div');
+            msg.className = 'success-message';
+            msg.innerHTML = `✓ <strong>${formNumber}</strong> submitted!`;
+            register.insertBefore(msg, register.firstChild);
+            setTimeout(() => msg.remove(), 5000);
+        }
+
+        // ── Override updateRegister to load from Supabase ─────────────────────────
+        async function updateRegister(formType) {
+            const container = document.getElementById(formType + '-register');
+            const { data, error } = await sb.from('construction_forms')
+                .select('*').eq('project', currentProject).eq('form_type', formType)
+                .order('created_at', { ascending: false });
+            if (error || !data || data.length === 0) {
+                container.innerHTML = '<div class="empty-state">No records yet</div>';
+                return;
+            }
+            let html = '<table class="register-table"><thead><tr><th>Form Number</th><th>Date</th><th>By</th><th>Status</th></tr></thead><tbody>';
+            data.forEach(form => {
+                const by = (form.submitted_by||'').split('@')[0];
+                html += `<tr><td><strong>${form.form_number}</strong></td><td>${form.date_raised}</td><td>${by}</td><td><span class="status-badge ${(form.status||'').toLowerCase()}">${form.status}</span></td></tr>`;
+            });
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        // ── Override updateDashboard to load from Supabase ────────────────────────
+        async function updateDashboard() {
+            const formLabels = { rfi:'RFI',cvi:'CVI',delay:'Delay Notice',diary:'Daily Diary',material:'Material Request',scaffold:'Scaffold Request',puwer:'PUWER',havs:'HAVS',dabs:'DABS',incident:'Incident Report',respirator:'Respirator Test',toolbox:'Toolbox Talk',loler:'LOLER',audit:'Site Audit',progress:'Progress Report' };
+            const { data } = await sb.from('construction_forms').select('form_type,status').eq('project', currentProject);
+            const rows = data || [];
+            let html = '';
+            formTypes.forEach(type => {
+                const typeRows = rows.filter(r => r.form_type === type);
+                const raised = typeRows.length;
+                const open = typeRows.filter(r => r.status === 'Open').length;
+                const closed = typeRows.filter(r => r.status === 'Resolved').length;
+                html += `<tr><td class="form-name">${formLabels[type]}</td>
+                    <td class="count-cell" onclick="showDashboardDetail('${type}','all')"><span class="count-raised">${raised}</span></td>
+                    <td class="count-cell" onclick="showDashboardDetail('${type}','Open')"><span class="count-open">${open}</span></td>
+                    <td class="count-cell" onclick="showDashboardDetail('${type}','Resolved')"><span class="count-closed">${closed}</span></td></tr>`;
+            });
+            document.getElementById('dashboardBody').innerHTML = html;
+        }
     </script>
 </body>
 </html>
