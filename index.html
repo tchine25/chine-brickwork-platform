@@ -289,7 +289,10 @@
         <option value="5b">5b. Returned Tenders</option>
         <option value="5c">5c. Live Jobs</option>
       </select>
-      <input id="ov-search" placeholder="🔍  Search jobs, contractors, CB numbers..." oninput="renderOverview()" style="flex:1;font-size:13px;padding:8px 14px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--bg-primary);color:var(--text-primary)">
+      <div style="flex:1;position:relative;display:flex;align-items:center">
+        <input id="ov-search" placeholder="🔍  Search jobs, contractors, CB numbers..." oninput="renderOverview()" style="width:100%;font-size:13px;padding:8px 32px 8px 14px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--bg-primary);color:var(--text-primary)">
+        <span onclick="document.getElementById('ov-search').value='';renderOverview()" style="position:absolute;right:10px;cursor:pointer;color:#aaa;font-size:16px;line-height:1;user-select:none" title="Clear search">&times;</span>
+      </div>
       <select id="ov-sort" onchange="renderOverview()" style="font-size:13px;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--bg-primary);color:var(--text-primary)">
         <option value="date">Sort: Date</option>
         <option value="cb">Sort: CB number</option>
