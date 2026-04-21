@@ -1291,11 +1291,16 @@ function renderWeeklyReport(){
       </table>
     </div>
     <div class="fullcard" style="margin-bottom:16px">
-      <div style="padding:12px 15px 6px;font-weight:600;font-size:13px;border-bottom:1px solid var(--border);margin-bottom:4px">Tenders being priced (5a) — ${priced.length} jobs</div>
-      ${tableHdr}${priced.map(jobRow).join('')}</tbody></table>
+      <div style="padding:12px 15px 6px;font-weight:600;font-size:13px;border-bottom:1px solid var(--border);margin-bottom:4px">5a — Tenders being priced (${priced.length} jobs)</div>
+      ${['Being Priced','Ready to Review','New Tenders Log','Tenders Waiting For'].map(stage=>{
+        const rows=priced.filter(j=>j.stage===stage);
+        if(!rows.length)return'';
+        return`<div style="padding:8px 15px 4px;font-size:11px;font-weight:600;color:#555;text-transform:uppercase;letter-spacing:0.5px;background:#f9fafb;border-bottom:1px solid #eee">${stage} — ${rows.length}</div>
+        ${tableHdr}${rows.map(jobRow).join('')}</tbody></table>`;
+      }).join('')}
     </div>
     <div class="fullcard" style="margin-bottom:16px">
-      <div style="padding:12px 15px 6px;font-weight:600;font-size:13px;border-bottom:1px solid var(--border);margin-bottom:4px">Tenders being chased (5b) — ${chased.length} jobs</div>
+      <div style="padding:12px 15px 6px;font-weight:600;font-size:13px;border-bottom:1px solid var(--border);margin-bottom:4px">5b — Tenders being chased (${chased.length} jobs)</div>
       ${tableHdr}${chased.map(jobRow).join('')}</tbody></table>
     </div>`;
 }
