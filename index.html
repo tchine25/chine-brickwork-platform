@@ -260,6 +260,7 @@
       <div class="snt" onclick="sp('crm','c-log',this)">Call log</div>
       <div class="snt" onclick="sp('crm','c-future',this)">Future opportunities</div>
       <div class="snt" onclick="sp('crm','c-archive',this);loadArchive()">Archive <span class="count-badge" id="archive-badge" style="background:#e5e5e5;color:#666;margin-left:4px"></span></div>
+      <div class="snt" onclick="sp('crm','c-report',this);renderWeeklyReport()">Weekly report</div>
     </div>
     <select id="ov-stage-filter" onchange="renderOverview()" style="font-size:12px;padding:5px 10px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--bg-primary);color:var(--text-primary);cursor:pointer">
       <option value="">All stages</option>
@@ -385,6 +386,17 @@
       </tr></thead>
       <tbody id="archive-body"></tbody></table>
     </div>
+  </div>
+
+  <div id="c-report" class="pg">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div>
+        <div style="font-size:15px;font-weight:600;color:var(--text-primary)">Weekly Report</div>
+        <div style="font-size:12px;color:var(--text-secondary);margin-top:2px" id="report-week-label"></div>
+      </div>
+      <button class="btn btn-primary" onclick="printWeeklyReport()" style="font-size:12px">Print / Export</button>
+    </div>
+    <div id="report-content"></div>
   </div>
 </div>
 
@@ -1202,6 +1214,109 @@ function renderOverview(){
   document.getElementById('badge-ok').textContent=(visibleJobs.filter(j=>j.status==='ok').length+oppOk.length)+' jobs';
 }
 function dateSortVal(d){if(!d)return 9999999;const p=d.split('/');return p.length===3?parseInt(p[2])*10000+parseInt(p[1])*100+parseInt(p[0]):9999999;}
+
+function renderWeeklyReport(){
+  // Week bounds: Mon–Sun of current week
+  const now=new Date();
+  const day=now.getDay();
+  const mon=new Date(now);mon.setDate(now.getDate()-(day===0?6:day-1));mon.setHours(0,0,0,0);
+  const sun=new Date(mon);sun.setDate(mon.getDate()+6);sun.setHours(23,59,59,999);
+  const fmt=d=>{const dd=String(d.getDate()).padStart(2,'0');const mm=String(d.getMonth()+1).padStart(2,'0');return`${dd}/${mm}/${String(d.getFullYear()).slice(-2)}`;};
+  document.getElementById('report-week-label').textContent=`Week of ${fmt(mon)} – ${fmt(sun)}`;
+
+  // Parse DD/MM/YY or DD/MM/YYYY to Date
+  const parseDate=s=>{if(!s)return null;const p=s.split('/');if(p.length!==3)return null;const yr=p[2].length===2?2000+parseInt(p[2]):parseInt(p[2]);return new Date(yr,parseInt(p[1])-1,parseInt(p[0]));};
+
+  // This week's activity from comms
+  const weekComms=[];
+  jobs.forEach(j=>{
+    (j.comms||[]).forEach(c=>{
+      const d=parseDate(c.d);
+      if(d&&d>=mon&&d<=sun) weekComms.push({...c,cb:j.cb,proj:j.proj,con:j.con});
+    });
+  });
+  weekComms.sort((a,b)=>dateSortVal(a.d)-dateSortVal(b.d));
+
+  // Jobs split into priced (5a) and chased (5b), sorted by next action date
+  const priced=jobs.filter(j=>(j.folder||'').startsWith('5a')).sort((a,b)=>dateSortVal(a.nextDate)-dateSortVal(b.nextDate));
+  const chased=jobs.filter(j=>(j.folder||'').startsWith('5b')).sort((a,b)=>dateSortVal(a.nextDate)-dateSortVal(b.nextDate));
+
+  const statusDot=s=>s==='overdue'?'<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#e24b4a;margin-right:6px"></span>':s==='week'?'<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ef9f27;margin-right:6px"></span>':'<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#1d9e75;margin-right:6px"></span>';
+
+  const jobRow=j=>`<tr>
+    <td style="font-weight:600;white-space:nowrap">${j.cb}</td>
+    <td>${j.con}</td>
+    <td>${j.proj}</td>
+    <td>${j.stage||'—'}</td>
+    <td style="white-space:nowrap">${statusDot(j.status)}${j.nextDate||'—'}</td>
+    <td>${j.nextAct||'—'}</td>
+    <td style="text-align:center">${j.owner||'—'}</td>
+  </tr>`;
+
+  const tableHdr=`<table style="width:100%;border-collapse:collapse;font-size:12px">
+    <thead><tr style="background:#f5f7fa;text-align:left">
+      <th style="padding:7px 10px;border-bottom:1px solid #dde1e7;width:70px">CB No.</th>
+      <th style="padding:7px 10px;border-bottom:1px solid #dde1e7;width:150px">Contractor</th>
+      <th style="padding:7px 10px;border-bottom:1px solid #dde1e7">Project</th>
+      <th style="padding:7px 10px;border-bottom:1px solid #dde1e7;width:130px">Stage</th>
+      <th style="padding:7px 10px;border-bottom:1px solid #dde1e7;width:100px">Next date</th>
+      <th style="padding:7px 10px;border-bottom:1px solid #dde1e7">Next action</th>
+      <th style="padding:7px 10px;border-bottom:1px solid #dde1e7;width:50px;text-align:center">Owner</th>
+    </tr></thead><tbody>`;
+
+  const activityRows=weekComms.length
+    ? weekComms.map(c=>`<tr>
+        <td style="padding:7px 10px;border-bottom:1px solid #f0f0f0;font-weight:600;white-space:nowrap">${c.cb}</td>
+        <td style="padding:7px 10px;border-bottom:1px solid #f0f0f0">${c.con}</td>
+        <td style="padding:7px 10px;border-bottom:1px solid #f0f0f0">${c.proj}</td>
+        <td style="padding:7px 10px;border-bottom:1px solid #f0f0f0;white-space:nowrap">${c.d}</td>
+        <td style="padding:7px 10px;border-bottom:1px solid #f0f0f0">${c.who||'—'}</td>
+        <td style="padding:7px 10px;border-bottom:1px solid #f0f0f0" colspan="2">${c.text}</td>
+      </tr>`).join('')
+    : `<tr><td colspan="7" style="padding:12px 10px;color:#888;font-size:12px">No activity logged this week.</td></tr>`;
+
+  document.getElementById('report-content').innerHTML=`
+    <div class="fullcard" style="margin-bottom:16px">
+      <div style="padding:12px 15px 6px;font-weight:600;font-size:13px;border-bottom:1px solid var(--border);margin-bottom:4px">This week's activity</div>
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead><tr style="background:#f5f7fa;text-align:left">
+          <th style="padding:7px 10px;border-bottom:1px solid #dde1e7;width:70px">CB No.</th>
+          <th style="padding:7px 10px;border-bottom:1px solid #dde1e7;width:150px">Contractor</th>
+          <th style="padding:7px 10px;border-bottom:1px solid #dde1e7">Project</th>
+          <th style="padding:7px 10px;border-bottom:1px solid #dde1e7;width:80px">Date</th>
+          <th style="padding:7px 10px;border-bottom:1px solid #dde1e7;width:50px">By</th>
+          <th style="padding:7px 10px;border-bottom:1px solid #dde1e7" colspan="2">Activity</th>
+        </tr></thead>
+        <tbody>${activityRows}</tbody>
+      </table>
+    </div>
+    <div class="fullcard" style="margin-bottom:16px">
+      <div style="padding:12px 15px 6px;font-weight:600;font-size:13px;border-bottom:1px solid var(--border);margin-bottom:4px">Tenders being priced (5a) — ${priced.length} jobs</div>
+      ${tableHdr}${priced.map(jobRow).join('')}</tbody></table>
+    </div>
+    <div class="fullcard" style="margin-bottom:16px">
+      <div style="padding:12px 15px 6px;font-weight:600;font-size:13px;border-bottom:1px solid var(--border);margin-bottom:4px">Tenders being chased (5b) — ${chased.length} jobs</div>
+      ${tableHdr}${chased.map(jobRow).join('')}</tbody></table>
+    </div>`;
+}
+
+function printWeeklyReport(){
+  const now=new Date();
+  const day=now.getDay();
+  const mon=new Date(now);mon.setDate(now.getDate()-(day===0?6:day-1));
+  const fmt=d=>`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getFullYear()).slice(-2)}`;
+  const content=document.getElementById('report-content').innerHTML;
+  const label=document.getElementById('report-week-label').textContent;
+  const w=window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html><head><title>Weekly Report — ${label}</title>
+  <style>body{font-family:Arial,sans-serif;font-size:12px;color:#222;margin:20px}h1{font-size:16px;margin-bottom:4px}p{color:#666;margin:0 0 16px}table{width:100%;border-collapse:collapse;margin-bottom:20px}th{background:#f5f7fa;padding:7px 10px;text-align:left;border-bottom:2px solid #dde1e7;font-size:11px}td{padding:7px 10px;border-bottom:1px solid #f0f0f0;vertical-align:top}.section-title{font-weight:600;font-size:13px;margin:20px 0 6px;padding-bottom:4px;border-bottom:1px solid #dde1e7}@media print{body{margin:10px}}</style>
+  </head><body>
+  <h1>Chine Brickwork — Weekly Report</h1><p>${label}</p>
+  ${content}
+  <script>window.print();<\/script>
+  </body></html>`);
+  w.document.close();
+}
 
 function renderPipeline(data){
   document.getElementById('pipe-body').innerHTML=data.map(j=>`<tr onclick="openJob('${j.id}')">
