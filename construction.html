@@ -1698,6 +1698,7 @@
             </div>
         </div>
     </div>
+    <div id="dashboardDetailModal" class="dashboard-detail-modal">
         <div class="dashboard-detail-content">
             <button class="dashboard-detail-close" onclick="closeDashboardDetail()">×</button>
             <div class="dashboard-detail-header" id="dashboardDetailHeader"></div>
@@ -1714,6 +1715,15 @@
             </table>
         </div>
     </div>
+    </div>
+
+    <!-- Form Detail Modal -->
+    <div id="formDetailModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center">
+        <div style="background:white;border-radius:8px;padding:28px;max-width:600px;width:90%;max-height:80vh;overflow-y:auto;position:relative">
+            <button onclick="closeFormDetail()" style="position:absolute;top:14px;right:16px;background:none;border:none;font-size:22px;cursor:pointer;color:#999">×</button>
+            <div id="formDetailContent"></div>
+        </div>
+    </div>
 
     <script>
         const projects = ['CB319', 'CB320', 'CB325', 'CB337', 'CB348', 'CB354', 'CB409'];
@@ -1723,7 +1733,7 @@
         const database = {};
         projects.forEach(p => { database[p] = {}; formTypes.forEach(f => { database[p][f] = []; }); });
 
-        let currentProject = 'CB320';
+        let currentProject = document.getElementById('projectSelect').value || 'CB319';
 
         function switchProject() {
             currentProject = document.getElementById('projectSelect').value;
@@ -2401,20 +2411,68 @@
         // ── Override updateRegister to load from Supabase ─────────────────────────
         async function updateRegister(formType) {
             const container = document.getElementById(formType + '-register');
+            if (!container) return;
             const { data, error } = await sb.from('construction_forms')
                 .select('*').eq('project', currentProject).eq('form_type', formType)
                 .order('created_at', { ascending: false });
-            if (error || !data || data.length === 0) {
-                container.innerHTML = '<div class="empty-state">No records yet</div>';
-                return;
-            }
-            let html = '<table class="register-table"><thead><tr><th>Form Number</th><th>Date</th><th>By</th><th>Status</th></tr></thead><tbody>';
+            if (error) { container.innerHTML = `<div class="empty-state" style="color:#c62828">Error loading records: ${error.message}</div>`; return; }
+            if (!data || data.length === 0) { container.innerHTML = '<div class="empty-state">No records yet</div>'; return; }
+            let html = '<table class="register-table"><thead><tr><th>Form Number</th><th>Date</th><th>By</th><th>Status</th><th></th></tr></thead><tbody>';
             data.forEach(form => {
                 const by = (form.submitted_by||'').split('@')[0];
-                html += `<tr><td><strong>${form.form_number}</strong></td><td>${form.date_raised}</td><td>${by}</td><td><span class="status-badge ${(form.status||'').toLowerCase()}">${form.status}</span></td></tr>`;
+                html += `<tr style="cursor:pointer" onclick="showFormDetail('${form.id}')" onmouseover="this.style.background='#f0f6ff'" onmouseout="this.style.background=''">
+                    <td><strong>${form.form_number}</strong></td>
+                    <td>${form.date_raised}</td>
+                    <td>${by}</td>
+                    <td><span class="status-badge ${(form.status||'').toLowerCase()}">${form.status}</span></td>
+                    <td style="color:#0066cc;font-size:12px">View ›</td>
+                </tr>`;
             });
             html += '</tbody></table>';
             container.innerHTML = html;
+        }
+
+        async function showFormDetail(formId) {
+            const modal = document.getElementById('formDetailModal');
+            const content = document.getElementById('formDetailContent');
+            content.innerHTML = '<p style="color:#999;font-size:13px">Loading...</p>';
+            modal.style.display = 'flex';
+            const { data: form, error } = await sb.from('construction_forms').select('*').eq('id', formId).single();
+            if (error || !form) { content.innerHTML = '<p style="color:#c62828">Could not load form details.</p>'; return; }
+            const fieldLabels = {
+                date:'Date', 'site-manager':'Site Manager', personnel:'Personnel On Site',
+                weather:'Weather', completed:'Work Completed', planned:'Planned for Tomorrow',
+                delays:'Delays', notes:'Notes', description:'Description', location:'Location',
+                'raised-by':'Raised By', contractor:'Contractor', reference:'Reference',
+                'instruction-by':'Instruction By', 'work-description':'Work Description',
+                'delay-reason':'Delay Reason', 'delay-duration':'Duration',
+                'requested-by':'Requested By', 'material-description':'Material Description',
+                quantity:'Quantity', supplier:'Supplier', 'required-by':'Required By',
+                operative:'Operative', 'equipment-description':'Equipment', 'test-result':'Test Result',
+                'talk-subject':'Talk Subject', attendees:'Attendees', presenter:'Presenter',
+            };
+            let detailsHtml = '';
+            if (form.details && typeof form.details === 'object') {
+                Object.entries(form.details).forEach(([k, v]) => {
+                    if (!v) return;
+                    const label = fieldLabels[k] || k.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+                    detailsHtml += `<tr><td style="font-weight:600;color:#555;padding:8px 12px;white-space:nowrap;vertical-align:top;width:160px">${label}</td><td style="padding:8px 12px;color:#1a1a1a">${String(v).replace(/\n/g,'<br>')}</td></tr>`;
+                });
+            }
+            content.innerHTML = `
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:14px;border-bottom:2px solid #eee">
+                    <div>
+                        <div style="font-size:18px;font-weight:700">${form.form_number}</div>
+                        <div style="font-size:13px;color:#666;margin-top:3px">${form.project} · ${form.date_raised} · Submitted by ${(form.submitted_by||'').split('@')[0]}</div>
+                    </div>
+                    <span class="status-badge ${(form.status||'').toLowerCase()}" style="font-size:12px">${form.status}</span>
+                </div>
+                ${detailsHtml ? `<table style="width:100%;border-collapse:collapse">${detailsHtml}</table>` : '<p style="color:#999;font-size:13px">No field details recorded.</p>'}
+            `;
+        }
+
+        function closeFormDetail() {
+            document.getElementById('formDetailModal').style.display = 'none';
         }
 
         // ── Override updateDashboard to load from Supabase ────────────────────────
