@@ -727,6 +727,7 @@
                 <button class="nav-tab" onclick="switchTab(event, 'audit')">Audit</button>
                 <button class="nav-tab" onclick="switchTab(event, 'progress')">Progress</button>
                 <button class="nav-tab" onclick="switchTab(event, 'reports')">Reports</button>
+                <button class="nav-tab" style="font-weight:700;color:#0066cc" onclick="switchTab(event, 'master');renderMasterSheet()">⚡ Master View</button>
             </div>
         </header>
 
@@ -1612,6 +1613,15 @@
             </div>
             <div id="reports-container"></div>
         </div>
+        <!-- MASTER VIEW TAB -->
+        <div id="master" class="tab-content">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+                <h2 style="font-size:20px">All Projects — Master Overview</h2>
+                <button class="button button-primary" onclick="renderMasterSheet()" style="padding:8px 16px;font-size:13px">↻ Refresh</button>
+            </div>
+            <p style="font-size:13px;color:#666;margin-bottom:16px">Shows open / unresolved form counts per project. <span style="background:#fdecea;color:#c62828;padding:2px 7px;border-radius:4px;font-weight:600">Red</span> = has outstanding items.</p>
+            <div id="master-content" style="overflow-x:auto"></div>
+        </div>
     </div>
 
     <!-- Email Modal -->
@@ -2072,6 +2082,56 @@
             printWindow.document.write(htmlContent);
             printWindow.document.close();
             printWindow.print();
+        }
+
+        // ── Master Sheet ─────────────────────────────────────────────────────────
+        async function renderMasterSheet(){
+            const container = document.getElementById('master-content');
+            container.innerHTML = '<p style="color:#999;font-size:13px">Loading...</p>';
+
+            const { data, error } = await sb.from('construction_forms').select('project,form_type,status');
+            if(error){ container.innerHTML = '<p style="color:red">Error loading data.</p>'; return; }
+
+            const formLabels = { rfi:'RFI',cvi:'CVI',delay:'Delay',diary:'Diary',material:'Material',scaffold:'Scaffold',puwer:'PUWER',havs:'HAVS',dabs:'DABS',incident:'Incident',respirator:'Respirator',toolbox:'Toolbox',loler:'LOLER',audit:'Audit',progress:'Progress' };
+            const rows = data || [];
+
+            // Build per-project per-formtype counts of open items
+            const projectSet = [...new Set(rows.map(r=>r.project))];
+            // Also include all known projects even if no data yet
+            projects.forEach(p=>{ if(!projectSet.includes(p)) projectSet.push(p); });
+            projectSet.sort();
+
+            let html = '<table style="border-collapse:collapse;font-size:12px;min-width:100%"><thead>';
+            html += '<tr style="background:#f5f5f5"><th style="padding:10px 12px;text-align:left;border:1px solid #ddd;white-space:nowrap;min-width:160px">Project</th>';
+            formTypes.forEach(t => {
+                html += `<th style="padding:8px 6px;text-align:center;border:1px solid #ddd;font-size:11px;white-space:nowrap">${formLabels[t]}</th>`;
+            });
+            html += '<th style="padding:8px 10px;text-align:center;border:1px solid #ddd;background:#eee">Total Open</th></tr></thead><tbody>';
+
+            projectSet.forEach(proj => {
+                const projRows = rows.filter(r=>r.project===proj);
+                let totalOpen = 0;
+                let cells = '';
+                formTypes.forEach(t => {
+                    const typeRows = projRows.filter(r=>r.form_type===t);
+                    const total = typeRows.length;
+                    const open = typeRows.filter(r=>r.status!=='Resolved'&&r.status!=='Closed').length;
+                    totalOpen += open;
+                    const bg = open>0 ? 'background:#fdecea;color:#c62828;font-weight:700' : total>0 ? 'background:#e8f5e9;color:#2e7d32;font-weight:600' : 'color:#bbb';
+                    const label = total===0 ? '—' : open>0 ? `${open} open` : `✓ ${total}`;
+                    cells += `<td style="padding:7px 6px;text-align:center;border:1px solid #eee;font-size:11px;${bg}" title="${total} total, ${open} open">${label}</td>`;
+                });
+                const rowBg = totalOpen>0 ? 'background:#fffaf9' : '';
+                const totalStyle = totalOpen>0 ? 'background:#fdecea;color:#c62828;font-weight:700' : 'color:#999';
+                html += `<tr style="${rowBg}" onmouseover="this.style.background='#f9f9f9'" onmouseout="this.style.background='${totalOpen>0?'#fffaf9':''}'">
+                    <td style="padding:8px 12px;border:1px solid #eee;font-weight:600;white-space:nowrap">${proj}</td>
+                    ${cells}
+                    <td style="padding:7px 10px;text-align:center;border:1px solid #eee;${totalStyle}">${totalOpen||'—'}</td>
+                </tr>`;
+            });
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
         }
 
         // ── Supabase + Auth ───────────────────────────────────────────────────────
