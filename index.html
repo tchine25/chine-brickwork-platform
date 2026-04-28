@@ -399,7 +399,9 @@
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
       <div>
         <div style="font-size:15px;font-weight:600;color:var(--text-primary)">Weekly Report</div>
-        <div style="font-size:12px;color:var(--text-secondary);margin-top:2px" id="report-week-label"></div>
+        <div style="margin-top:6px">
+          <select id="report-week-select" onchange="renderWeeklyReport()" style="font-size:13px;padding:6px 10px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--bg-primary);color:var(--text-primary)"></select>
+        </div>
       </div>
       <button class="btn btn-primary" onclick="printWeeklyReport()" style="font-size:12px">Print / Export</button>
     </div>
@@ -1223,13 +1225,24 @@ function renderOverview(){
 function dateSortVal(d){if(!d)return 9999999;const p=d.split('/');return p.length===3?parseInt(p[2])*10000+parseInt(p[1])*100+parseInt(p[0]):9999999;}
 
 function renderWeeklyReport(){
-  // Week bounds: Mon–Sun of current week
-  const now=new Date();
-  const day=now.getDay();
-  const mon=new Date(now);mon.setDate(now.getDate()-(day===0?6:day-1));mon.setHours(0,0,0,0);
-  const sun=new Date(mon);sun.setDate(mon.getDate()+6);sun.setHours(23,59,59,999);
   const fmt=d=>{const dd=String(d.getDate()).padStart(2,'0');const mm=String(d.getMonth()+1).padStart(2,'0');return`${dd}/${mm}/${String(d.getFullYear()).slice(-2)}`;};
-  document.getElementById('report-week-label').textContent=`Week of ${fmt(mon)} – ${fmt(sun)}`;
+  // Build week options (current + 4 previous) if not already populated
+  const sel=document.getElementById('report-week-select');
+  if(!sel.options.length){
+    const now=new Date();
+    const day=now.getDay();
+    const thisMon=new Date(now);thisMon.setDate(now.getDate()-(day===0?6:day-1));thisMon.setHours(0,0,0,0);
+    for(let i=0;i<5;i++){
+      const mon=new Date(thisMon);mon.setDate(thisMon.getDate()-i*7);
+      const sun=new Date(mon);sun.setDate(mon.getDate()+6);
+      const label=i===0?`This week (${fmt(mon)} – ${fmt(sun)})`:`w/c ${fmt(mon)}`;
+      const opt=document.createElement('option');opt.value=mon.toISOString();opt.textContent=label;
+      sel.appendChild(opt);
+    }
+  }
+  // Get selected week bounds
+  const mon=new Date(sel.value||sel.options[0].value);mon.setHours(0,0,0,0);
+  const sun=new Date(mon);sun.setDate(mon.getDate()+6);sun.setHours(23,59,59,999);
 
   // Parse DD/MM/YY or DD/MM/YYYY to Date
   const parseDate=s=>{if(!s)return null;const p=s.split('/');if(p.length!==3)return null;const yr=p[2].length===2?2000+parseInt(p[2]):parseInt(p[2]);return new Date(yr,parseInt(p[1])-1,parseInt(p[0]));};
@@ -1313,12 +1326,12 @@ function renderWeeklyReport(){
 }
 
 function printWeeklyReport(){
-  const now=new Date();
-  const day=now.getDay();
-  const mon=new Date(now);mon.setDate(now.getDate()-(day===0?6:day-1));
   const fmt=d=>`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getFullYear()).slice(-2)}`;
+  const sel=document.getElementById('report-week-select');
+  const mon=new Date(sel.value||sel.options[0].value);
+  const sun=new Date(mon);sun.setDate(mon.getDate()+6);
+  const label=`Week of ${fmt(mon)} – ${fmt(sun)}`;
   const content=document.getElementById('report-content').innerHTML;
-  const label=document.getElementById('report-week-label').textContent;
   const w=window.open('','_blank');
   w.document.write(`<!DOCTYPE html><html><head><title>Weekly Report — ${label}</title>
   <style>body{font-family:Arial,sans-serif;font-size:12px;color:#222;margin:20px}h1{font-size:16px;margin-bottom:4px}p{color:#666;margin:0 0 16px}table{width:100%;border-collapse:collapse;margin-bottom:20px}th{background:#f5f7fa;padding:7px 10px;text-align:left;border-bottom:2px solid #dde1e7;font-size:11px}td{padding:7px 10px;border-bottom:1px solid #f0f0f0;vertical-align:top}.section-title{font-weight:600;font-size:13px;margin:20px 0 6px;padding-bottom:4px;border-bottom:1px solid #dde1e7}@media print{body{margin:10px}}</style>
