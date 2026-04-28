@@ -2486,9 +2486,10 @@
                     <span class="status-badge ${(form.status||'').toLowerCase()}" style="font-size:12px">${form.status}</span>
                 </div>
                 ${detailsHtml ? `<table style="width:100%;border-collapse:collapse;margin-bottom:20px">${detailsHtml}</table>` : '<p style="color:#999;font-size:13px;margin-bottom:20px">No field details recorded.</p>'}
-                <div style="display:flex;gap:10px;padding-top:14px;border-top:1px solid #eee">
+                <div style="display:flex;gap:10px;padding-top:14px;border-top:1px solid #eee;flex-wrap:wrap">
                     <button class="button button-secondary" onclick="emailFormFromDetail('${form.form_type}','${form.form_number}')" style="font-size:13px">📧 Email Form</button>
                     <button class="button button-secondary" onclick="printFormDetail()" style="font-size:13px">🖨 Print / PDF</button>
+                    ${form.details?.dropbox_url ? `<a href="${form.details.dropbox_url}" target="_blank" class="button button-secondary" style="font-size:13px;text-decoration:none">📎 Open Original PDF</a>` : ''}
                     <button class="button" onclick="closeFormDetail()" style="font-size:13px;margin-left:auto">Close</button>
                 </div>
             `;

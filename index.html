@@ -35,7 +35,9 @@
   .btn-primary { background:var(--navy);color:#fff;border-color:var(--navy); }
   .btn-primary:hover { opacity:0.9; }
   .btn-danger { background:var(--danger-bg);color:var(--danger-txt);border-color:#f5c6c6; }
-  .module-tabs { display:flex;background:var(--bg-primary);border-bottom:1px solid var(--border);padding:0 24px;gap:0; }
+  .module-tabs { display:flex;background:var(--bg-primary);border-bottom:1px solid var(--border);padding:0 24px;gap:0;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none; }
+  .module-tabs::-webkit-scrollbar { display:none; }
+  .mtab { white-space:nowrap; }
   .mtab { padding:11px 20px;font-size:13px;font-weight:500;cursor:pointer;color:var(--text-secondary);border-bottom:2.5px solid transparent;transition:all 0.15s;display:flex;align-items:center;gap:7px; }
   .mtab.on { color:var(--navy);border-bottom-color:var(--navy); }
   .mtab.mkt.on { color:var(--teal);border-bottom-color:var(--teal); }
