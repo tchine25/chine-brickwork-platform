@@ -728,6 +728,7 @@
                 <button class="nav-tab" onclick="switchTab(event, 'progress')">Progress</button>
                 <button class="nav-tab" onclick="switchTab(event, 'reports')">Reports</button>
                 <button class="nav-tab" style="font-weight:700;color:#0066cc" onclick="switchTab(event, 'master');renderMasterSheet()">⚡ Master View</button>
+                <button class="nav-tab" id="admin-tab" style="display:none;color:#e65100;font-weight:700" onclick="switchTab(event, 'admin');renderAdminPanel()">⚙ Admin</button>
             </div>
         </header>
 
@@ -1613,6 +1614,44 @@
             </div>
             <div id="reports-container"></div>
         </div>
+        <!-- ADMIN TAB -->
+        <div id="admin" class="tab-content">
+            <h2 style="font-size:20px;margin-bottom:6px">User Management</h2>
+            <p style="font-size:13px;color:#666;margin-bottom:20px">Invite users and assign them to projects. Admins (Tim & Phil) have full access.</p>
+
+            <div style="background:white;border:1px solid #eee;border-radius:8px;padding:24px;margin-bottom:24px;box-shadow:0 1px 3px rgba(0,0,0,0.05)">
+                <h3 style="font-size:15px;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid #eee">Invite New User</h3>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:12px;align-items:end">
+                    <div>
+                        <label style="display:block;font-size:12px;font-weight:600;margin-bottom:4px">Full Name</label>
+                        <input type="text" id="invite-name" placeholder="e.g. John Smith" style="width:100%;padding:9px;border:1px solid #ddd;border-radius:4px;font-size:13px">
+                    </div>
+                    <div>
+                        <label style="display:block;font-size:12px;font-weight:600;margin-bottom:4px">Email</label>
+                        <input type="email" id="invite-email" placeholder="email@chinebrickwork.co.uk" style="width:100%;padding:9px;border:1px solid #ddd;border-radius:4px;font-size:13px">
+                    </div>
+                    <div>
+                        <label style="display:block;font-size:12px;font-weight:600;margin-bottom:4px">Role</label>
+                        <select id="invite-role" style="width:100%;padding:9px;border:1px solid #ddd;border-radius:4px;font-size:13px">
+                            <option value="Project Manager">Project Manager</option>
+                            <option value="Site Manager">Site Manager</option>
+                            <option value="Contracts Manager">Contracts Manager</option>
+                            <option value="Commercial Manager">Commercial Manager</option>
+                            <option value="QS">QS</option>
+                            <option value="Foreman">Foreman</option>
+                        </select>
+                    </div>
+                    <button class="button button-primary" onclick="inviteUser()" style="margin-bottom:0;white-space:nowrap">Send Invite</button>
+                </div>
+                <div id="invite-msg" style="margin-top:10px;font-size:13px"></div>
+            </div>
+
+            <div style="background:white;border:1px solid #eee;border-radius:8px;padding:24px;box-shadow:0 1px 3px rgba(0,0,0,0.05)">
+                <h3 style="font-size:15px;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid #eee">All Users & Project Assignments</h3>
+                <div id="admin-users-list">Loading...</div>
+            </div>
+        </div>
+
         <!-- MASTER VIEW TAB -->
         <div id="master" class="tab-content">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
@@ -2084,6 +2123,70 @@
             printWindow.print();
         }
 
+        // ── Admin Panel ──────────────────────────────────────────────────────────
+        const CP_ROLES = ['Project Manager','Site Manager','Contracts Manager','Commercial Manager','QS','Foreman'];
+
+        async function inviteUser(){
+            const name  = document.getElementById('invite-name').value.trim();
+            const email = document.getElementById('invite-email').value.trim();
+            const role  = document.getElementById('invite-role').value;
+            const msg   = document.getElementById('invite-msg');
+            if(!name||!email){ msg.style.color='#c62828'; msg.textContent='Please enter name and email.'; return; }
+            msg.style.color='#666'; msg.textContent='Sending invite...';
+            // Use Supabase admin invite via service role is not available client-side
+            // Instead, insert a pending profile and user must sign up themselves
+            const { error } = await sb.from('cp_profiles').upsert({ email, name, role: 'manager', job_role: role }, { onConflict: 'email' });
+            if(error){ msg.style.color='#c62828'; msg.textContent='Error: '+error.message; return; }
+            msg.style.color='#2e7d32'; msg.textContent=`✓ Profile created for ${name}. Ask them to go to the Construction Platform and sign up / reset password using ${email}.`;
+            document.getElementById('invite-name').value='';
+            document.getElementById('invite-email').value='';
+            renderAdminPanel();
+        }
+
+        async function renderAdminPanel(){
+            const container = document.getElementById('admin-users-list');
+            container.innerHTML = 'Loading...';
+            const { data: profiles } = await sb.from('cp_profiles').select('*').order('name');
+            const { data: assignments } = await sb.from('cp_project_assignments').select('*');
+            if(!profiles||profiles.length===0){ container.innerHTML='<p style="color:#999;font-size:13px">No users yet.</p>'; return; }
+            let html = '';
+            profiles.forEach(p=>{
+                const assigned = (assignments||[]).filter(a=>a.user_id===p.id).map(a=>a.project_id);
+                const roleLabel = p.role==='admin'?'<span style="background:#e3f2fd;color:#1565c0;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700">ADMIN</span>'
+                    :`<span style="background:#f3e5f5;color:#6a1b9a;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600">${p.job_role||p.role}</span>`;
+                html+=`<div style="padding:14px 0;border-bottom:1px solid #f0f0f0">
+                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+                        <div style="font-weight:600;font-size:14px">${p.name||p.email}</div>
+                        <div style="font-size:12px;color:#888">${p.email}</div>
+                        ${roleLabel}
+                        ${p.role!=='admin'?`<select onchange="updateUserRole('${p.id}',this.value)" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;margin-left:auto">
+                            ${CP_ROLES.map(r=>`<option value="${r}" ${p.job_role===r?'selected':''}>${r}</option>`).join('')}
+                        </select>`:''}
+                    </div>
+                    ${p.role!=='admin'?`<div style="display:flex;flex-wrap:wrap;gap:8px">
+                        ${projects.map(proj=>{
+                            const isAssigned=assigned.includes(proj);
+                            return`<button onclick="toggleAssignment('${p.id}','${proj}',${isAssigned})" style="padding:4px 10px;border-radius:4px;font-size:12px;border:1px solid ${isAssigned?'#0066cc':'#ddd'};background:${isAssigned?'#e3f2fd':'white'};color:${isAssigned?'#0066cc':'#666'};cursor:pointer;font-weight:${isAssigned?'600':'400'}">${proj}</button>`;
+                        }).join('')}
+                    </div>`:'<div style="font-size:12px;color:#999">Full access to all projects</div>'}
+                </div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        async function updateUserRole(userId, jobRole){
+            await sb.from('cp_profiles').update({ job_role: jobRole }).eq('id', userId);
+        }
+
+        async function toggleAssignment(userId, projectId, isAssigned){
+            if(isAssigned){
+                await sb.from('cp_project_assignments').delete().eq('user_id', userId).eq('project_id', projectId);
+            } else {
+                await sb.from('cp_project_assignments').insert({ user_id: userId, project_id: projectId });
+            }
+            renderAdminPanel();
+        }
+
         // ── Master Sheet ─────────────────────────────────────────────────────────
         async function renderMasterSheet(){
             const container = document.getElementById('master-content');
@@ -2147,9 +2250,11 @@
             const password = document.getElementById('cp-password').value;
             const err = document.getElementById('cp-err');
             err.style.display = 'none';
-            if (!ALLOWED.includes(email)) { err.style.display = 'block'; err.textContent = 'Access denied — your account is not authorised for this platform.'; return; }
             const { data, error } = await sb.auth.signInWithPassword({ email, password });
             if (error) { err.style.display = 'block'; err.textContent = 'Incorrect email or password.'; return; }
+            // Check they have a profile (i.e. have been set up by admin)
+            const { data: profile } = await supabase.createClient(SUPABASE_URL, SUPABASE_KEY).from('cp_profiles').select('id').eq('id', data.user.id).single();
+            if (!profile && !ALLOWED.includes(email)) { await sb.auth.signOut(); err.style.display='block'; err.textContent='Access denied — contact Tim or Phil to be added to this platform.'; return; }
             cpUser = data.user;
             showCpApp();
         }
@@ -2165,13 +2270,29 @@
             document.getElementById('cp-password').value = '';
         }
 
-        function showCpApp() {
+        async function showCpApp() {
             document.getElementById('cp-login').classList.add('hidden');
             document.getElementById('cp-app').style.display = 'block';
             document.getElementById('cp-signout').style.display = 'block';
-            document.getElementById('cp-user-label').textContent = cpUser.email.split('@')[0];
+            // Load profile
+            const { data: profile } = await sb.from('cp_profiles').select('*').eq('id', cpUser.id).single();
+            cpProfile = profile;
+            const displayName = profile?.name || cpUser.email.split('@')[0];
+            const roleLabel = profile?.job_role ? ` · ${profile.job_role}` : (profile?.role==='admin'?' · Admin':'');
+            document.getElementById('cp-user-label').textContent = displayName + roleLabel;
+            // Show admin tab for admins only
+            if(profile?.role==='admin') document.getElementById('admin-tab').style.display='';
+            // Filter projects for non-admins
+            if(profile?.role!=='admin'){
+                const { data: assignments } = await sb.from('cp_project_assignments').select('project_id').eq('user_id', cpUser.id);
+                const allowed = (assignments||[]).map(a=>a.project_id);
+                const sel = document.getElementById('projectSelect');
+                Array.from(sel.options).forEach(o=>{ if(!allowed.includes(o.value)) o.style.display='none'; });
+                if(allowed.length) sel.value = allowed[0];
+            }
             updateDashboard();
         }
+        let cpProfile = null;
 
         // Check existing session on load
         sb.auth.getSession().then(({ data: { session } }) => {
