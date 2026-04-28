@@ -1621,7 +1621,7 @@
 
             <div style="background:white;border:1px solid #eee;border-radius:8px;padding:24px;margin-bottom:24px;box-shadow:0 1px 3px rgba(0,0,0,0.05)">
                 <h3 style="font-size:15px;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid #eee">Invite New User</h3>
-                <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:12px;align-items:end">
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px">
                     <div>
                         <label style="display:block;font-size:12px;font-weight:600;margin-bottom:4px">Full Name</label>
                         <input type="text" id="invite-name" placeholder="e.g. John Smith" style="width:100%;padding:9px;border:1px solid #ddd;border-radius:4px;font-size:13px">
@@ -1641,8 +1641,16 @@
                             <option value="Foreman">Foreman</option>
                         </select>
                     </div>
-                    <button class="button button-primary" onclick="inviteUser()" style="margin-bottom:0;white-space:nowrap">Send Invite</button>
                 </div>
+                <div style="margin-bottom:14px">
+                    <label style="display:block;font-size:12px;font-weight:600;margin-bottom:8px">Assign Projects <span style="font-weight:400;color:#999">(select all that apply)</span></label>
+                    <div id="invite-projects" style="display:flex;flex-wrap:wrap;gap:8px">
+                        ${projects.map(p=>`<label style="display:flex;align-items:center;gap:5px;padding:5px 10px;border:1px solid #ddd;border-radius:4px;font-size:12px;cursor:pointer;background:white">
+                            <input type="checkbox" value="${p}" style="cursor:pointer"> ${p}
+                        </label>`).join('')}
+                    </div>
+                </div>
+                <button class="button button-primary" onclick="inviteUser()" style="margin-bottom:0">Send Invite</button>
                 <div id="invite-msg" style="margin-top:10px;font-size:13px"></div>
             </div>
 
@@ -2132,14 +2140,22 @@
             const role  = document.getElementById('invite-role').value;
             const msg   = document.getElementById('invite-msg');
             if(!name||!email){ msg.style.color='#c62828'; msg.textContent='Please enter name and email.'; return; }
-            msg.style.color='#666'; msg.textContent='Sending invite...';
-            // Use Supabase admin invite via service role is not available client-side
-            // Instead, insert a pending profile and user must sign up themselves
-            const { error } = await sb.from('cp_profiles').upsert({ email, name, role: 'manager', job_role: role }, { onConflict: 'email' });
+
+            // Read checked project checkboxes
+            const selectedProjects = [...document.querySelectorAll('#invite-projects input[type=checkbox]:checked')].map(cb=>cb.value);
+
+            msg.style.color='#666'; msg.textContent='Saving...';
+            const { error } = await sb.from('cp_profiles').upsert(
+                { email, name, role: 'manager', job_role: role, pending_projects: selectedProjects },
+                { onConflict: 'email' }
+            );
             if(error){ msg.style.color='#c62828'; msg.textContent='Error: '+error.message; return; }
-            msg.style.color='#2e7d32'; msg.textContent=`✓ Profile created for ${name}. Ask them to go to the Construction Platform and sign up / reset password using ${email}.`;
+
+            const projText = selectedProjects.length ? ` Assigned to: ${selectedProjects.join(', ')}.` : ' No projects assigned yet.';
+            msg.style.color='#2e7d32'; msg.textContent=`✓ Profile created for ${name}.${projText} Ask them to sign in at the Construction Platform using ${email}.`;
             document.getElementById('invite-name').value='';
             document.getElementById('invite-email').value='';
+            document.querySelectorAll('#invite-projects input[type=checkbox]').forEach(cb=>cb.checked=false);
             renderAdminPanel();
         }
 
@@ -2152,23 +2168,33 @@
             let html = '';
             profiles.forEach(p=>{
                 const assigned = (assignments||[]).filter(a=>a.user_id===p.id).map(a=>a.project_id);
+                // For pending users (no id yet), show pending_projects instead
+                const isPending = !p.id;
+                const pendingList = p.pending_projects || [];
                 const roleLabel = p.role==='admin'?'<span style="background:#e3f2fd;color:#1565c0;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700">ADMIN</span>'
                     :`<span style="background:#f3e5f5;color:#6a1b9a;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600">${p.job_role||p.role}</span>`;
+                const pendingBadge = isPending ? '<span style="background:#fff3cd;color:#856404;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600">Pending sign-in</span>' : '';
                 html+=`<div style="padding:14px 0;border-bottom:1px solid #f0f0f0">
                     <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
                         <div style="font-weight:600;font-size:14px">${p.name||p.email}</div>
                         <div style="font-size:12px;color:#888">${p.email}</div>
-                        ${roleLabel}
-                        ${p.role!=='admin'?`<select onchange="updateUserRole('${p.id}',this.value)" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;margin-left:auto">
+                        ${roleLabel}${pendingBadge}
+                        ${p.role!=='admin'&&!isPending?`<select onchange="updateUserRole('${p.id}',this.value)" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;margin-left:auto">
                             ${CP_ROLES.map(r=>`<option value="${r}" ${p.job_role===r?'selected':''}>${r}</option>`).join('')}
                         </select>`:''}
                     </div>
-                    ${p.role!=='admin'?`<div style="display:flex;flex-wrap:wrap;gap:8px">
+                    ${p.role==='admin'?'<div style="font-size:12px;color:#999">Full access to all projects</div>'
+                    : isPending
+                        ? `<div style="font-size:12px;color:#666;margin-bottom:4px">Projects assigned (active on first sign-in):</div>
+                           <div style="display:flex;flex-wrap:wrap;gap:6px">${pendingList.length
+                               ? pendingList.map(proj=>`<span style="padding:3px 10px;border-radius:4px;font-size:12px;border:1px solid #0066cc;background:#e3f2fd;color:#0066cc;font-weight:600">${proj}</span>`).join('')
+                               : '<span style="font-size:12px;color:#999">None assigned</span>'}</div>`
+                        : `<div style="display:flex;flex-wrap:wrap;gap:8px">
                         ${projects.map(proj=>{
                             const isAssigned=assigned.includes(proj);
                             return`<button onclick="toggleAssignment('${p.id}','${proj}',${isAssigned})" style="padding:4px 10px;border-radius:4px;font-size:12px;border:1px solid ${isAssigned?'#0066cc':'#ddd'};background:${isAssigned?'#e3f2fd':'white'};color:${isAssigned?'#0066cc':'#666'};cursor:pointer;font-weight:${isAssigned?'600':'400'}">${proj}</button>`;
                         }).join('')}
-                    </div>`:'<div style="font-size:12px;color:#999">Full access to all projects</div>'}
+                    </div>`}
                 </div>`;
             });
             container.innerHTML = html;
@@ -2274,8 +2300,31 @@
             document.getElementById('cp-login').classList.add('hidden');
             document.getElementById('cp-app').style.display = 'block';
             document.getElementById('cp-signout').style.display = 'block';
-            // Load profile
-            const { data: profile } = await sb.from('cp_profiles').select('*').eq('id', cpUser.id).single();
+
+            // Load profile — first try by id, then by email (pending user signing in for first time)
+            let { data: profile } = await sb.from('cp_profiles').select('*').eq('id', cpUser.id).single();
+            if (!profile) {
+                // Pending user: profile was created by email before they had an auth account
+                const { data: pendingProfile } = await sb.from('cp_profiles').select('*').eq('email', cpUser.email).is('id', null).single();
+                if (pendingProfile) {
+                    // Stamp the real auth UUID onto their profile
+                    await sb.from('cp_profiles').update({ id: cpUser.id }).eq('email', cpUser.email).is('id', null);
+                    profile = { ...pendingProfile, id: cpUser.id };
+                }
+            }
+
+            // Convert pending_projects → cp_project_assignments (first login only)
+            if (profile && profile.pending_projects && profile.pending_projects.length > 0) {
+                const { data: existing } = await sb.from('cp_project_assignments').select('project_id').eq('user_id', cpUser.id);
+                const already = (existing||[]).map(a=>a.project_id);
+                const toAdd = profile.pending_projects.filter(p=>!already.includes(p));
+                if (toAdd.length > 0) {
+                    await sb.from('cp_project_assignments').insert(toAdd.map(p=>({ user_id: cpUser.id, project_id: p })));
+                }
+                // Clear pending_projects now they've been converted
+                await sb.from('cp_profiles').update({ pending_projects: [] }).eq('id', cpUser.id);
+            }
+
             cpProfile = profile;
             const displayName = profile?.name || cpUser.email.split('@')[0];
             const roleLabel = profile?.job_role ? ` · ${profile.job_role}` : (profile?.role==='admin'?' · Admin':'');
@@ -2295,11 +2344,15 @@
         let cpProfile = null;
 
         // Check existing session on load
-        sb.auth.getSession().then(({ data: { session } }) => {
-            if (session && ALLOWED.includes(session.user.email)) {
-                cpUser = session.user;
-                showCpApp();
+        sb.auth.getSession().then(async ({ data: { session } }) => {
+            if (!session) return;
+            // Allow if hardcoded admin OR has a cp_profiles record
+            const email = session.user.email;
+            if (ALLOWED.includes(email)) {
+                cpUser = session.user; showCpApp(); return;
             }
+            const { data: profile } = await sb.from('cp_profiles').select('id').or(`id.eq.${session.user.id},email.eq.${email}`).single();
+            if (profile) { cpUser = session.user; showCpApp(); }
         });
 
         // Allow Enter key on login
