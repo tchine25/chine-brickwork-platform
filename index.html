@@ -1252,7 +1252,7 @@ function renderWeeklyReport(){
   jobs.forEach(j=>{
     (j.comms||[]).forEach(c=>{
       const d=parseDate(c.d);
-      if(d&&d>=mon&&d<=sun) weekComms.push({...c,cb:j.cb,proj:j.proj,con:j.con});
+      if(d&&d>=mon&&d<=sun) weekComms.push({...c,jobId:j.id,cb:j.cb,proj:j.proj,con:j.con});
     });
   });
   weekComms.sort((a,b)=>dateSortVal(a.d)-dateSortVal(b.d));
@@ -1285,8 +1285,8 @@ function renderWeeklyReport(){
     </tr></thead><tbody>`;
 
   const activityRows=weekComms.length
-    ? weekComms.map(c=>`<tr>
-        <td style="padding:7px 10px;border-bottom:1px solid #f0f0f0;font-weight:600;white-space:nowrap">${c.cb}</td>
+    ? weekComms.map(c=>`<tr onclick="openJob('${c.jobId||c.cb}')" style="cursor:pointer" onmouseover="this.style.background='#f5f7fa'" onmouseout="this.style.background=''">
+        <td style="padding:7px 10px;border-bottom:1px solid #f0f0f0;font-weight:600;white-space:nowrap;color:var(--navy)">${c.cb}</td>
         <td style="padding:7px 10px;border-bottom:1px solid #f0f0f0">${c.con}</td>
         <td style="padding:7px 10px;border-bottom:1px solid #f0f0f0">${c.proj}</td>
         <td style="padding:7px 10px;border-bottom:1px solid #f0f0f0;white-space:nowrap">${c.d}</td>
