@@ -1287,25 +1287,29 @@ function renderWeeklyReport(){
   const activityRows=weekComms.length
     ? weekComms.map(c=>`<tr onclick="openJob('${c.jobId||c.cb}')" style="cursor:pointer" onmouseover="this.style.background='#f5f7fa'" onmouseout="this.style.background=''">
         <td style="padding:7px 10px;border-bottom:1px solid #f0f0f0;font-weight:600;white-space:nowrap;color:var(--navy)">${c.cb}</td>
-        <td style="padding:7px 10px;border-bottom:1px solid #f0f0f0">${c.con}</td>
-        <td style="padding:7px 10px;border-bottom:1px solid #f0f0f0">${c.proj}</td>
+        <td style="padding:7px 10px;border-bottom:1px solid #f0f0f0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.con}</td>
+        <td style="padding:7px 10px;border-bottom:1px solid #f0f0f0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.proj}</td>
         <td style="padding:7px 10px;border-bottom:1px solid #f0f0f0;white-space:nowrap">${c.d}</td>
-        <td style="padding:7px 10px;border-bottom:1px solid #f0f0f0">${c.who||'—'}</td>
-        <td style="padding:7px 10px;border-bottom:1px solid #f0f0f0" colspan="2">${c.text}</td>
+        <td style="padding:7px 10px;border-bottom:1px solid #f0f0f0;text-align:center">${c.who||'—'}</td>
+        <td style="padding:7px 10px;border-bottom:1px solid #f0f0f0;word-wrap:break-word">${c.text}</td>
       </tr>`).join('')
     : `<tr><td colspan="7" style="padding:12px 10px;color:#888;font-size:12px">No activity logged this week.</td></tr>`;
 
   document.getElementById('report-content').innerHTML=`
     <div class="fullcard" style="margin-bottom:16px">
       <div style="padding:12px 15px 6px;font-weight:600;font-size:13px;border-bottom:1px solid var(--border);margin-bottom:4px">This week's activity</div>
-      <table style="width:100%;border-collapse:collapse;font-size:12px">
+      <table style="width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed">
+        <colgroup>
+          <col style="width:70px"><col style="width:140px"><col style="width:180px">
+          <col style="width:75px"><col style="width:40px"><col>
+        </colgroup>
         <thead><tr style="background:#f5f7fa;text-align:left">
-          <th style="padding:7px 10px;border-bottom:1px solid #dde1e7;width:70px">CB No.</th>
-          <th style="padding:7px 10px;border-bottom:1px solid #dde1e7;width:150px">Contractor</th>
+          <th style="padding:7px 10px;border-bottom:1px solid #dde1e7">CB No.</th>
+          <th style="padding:7px 10px;border-bottom:1px solid #dde1e7">Contractor</th>
           <th style="padding:7px 10px;border-bottom:1px solid #dde1e7">Project</th>
-          <th style="padding:7px 10px;border-bottom:1px solid #dde1e7;width:80px">Date</th>
-          <th style="padding:7px 10px;border-bottom:1px solid #dde1e7;width:50px">By</th>
-          <th style="padding:7px 10px;border-bottom:1px solid #dde1e7" colspan="2">Activity</th>
+          <th style="padding:7px 10px;border-bottom:1px solid #dde1e7">Date</th>
+          <th style="padding:7px 10px;border-bottom:1px solid #dde1e7">By</th>
+          <th style="padding:7px 10px;border-bottom:1px solid #dde1e7">Activity</th>
         </tr></thead>
         <tbody>${activityRows}</tbody>
       </table>
