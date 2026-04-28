@@ -1854,39 +1854,36 @@
             document.getElementById('dashboardBody').innerHTML = html;
         }
 
-        function showDashboardDetail(formType, status) {
+        async function showDashboardDetail(formType, status) {
             const formLabels = {
-                rfi: 'RFI', cvi: 'CVI', delay: 'Delay Notice', diary: 'Daily Diary', 
+                rfi: 'RFI', cvi: 'CVI', delay: 'Delay Notice', diary: 'Daily Diary',
                 material: 'Material Request', scaffold: 'Scaffold Request',
-                puwer: 'PUWER', havs: 'HAVS', dabs: 'DABS', incident: 'Incident Report', 
-                respirator: 'Respirator Test', toolbox: 'Toolbox Talk', 
+                puwer: 'PUWER', havs: 'HAVS', dabs: 'DABS', incident: 'Incident Report',
+                respirator: 'Respirator Test', toolbox: 'Toolbox Talk',
                 loler: 'LOLER', audit: 'Site Audit', progress: 'Progress Report'
             };
 
-            let data = database[currentProject][formType];
-            
-            // Filter by status
-            if (status !== 'all') {
-                data = data.filter(f => f.status === status);
-            }
+            document.getElementById('dashboardDetailHeader').textContent = formLabels[formType] + (status !== 'all' ? ` — ${status}` : '');
+            document.getElementById('dashboardDetailBody').innerHTML = '<tr><td colspan="3" style="text-align:center;padding:16px;color:#999">Loading...</td></tr>';
+            document.getElementById('dashboardDetailModal').classList.add('open');
 
-            // Build header
-            let headerText = formLabels[formType];
-            if (status !== 'all') {
-                headerText += ` - ${status}`;
-            }
-            document.getElementById('dashboardDetailHeader').textContent = headerText;
+            let query = sb.from('construction_forms').select('*')
+                .eq('project', currentProject).eq('form_type', formType)
+                .order('created_at', { ascending: false });
+            if (status !== 'all') query = query.eq('status', status);
+            const { data, error } = await query;
 
-            // Build table
             let html = '';
-            if (data.length === 0) {
-                html = '<tr><td colspan="3" style="text-align: center; padding: 20px; color: #999;">No forms</td></tr>';
+            if (error || !data || data.length === 0) {
+                html = '<tr><td colspan="4" style="text-align:center;padding:20px;color:#999">No forms found</td></tr>';
             } else {
                 data.forEach(form => {
-                    html += `<tr>
-                        <td><strong>${form.number}</strong></td>
-                        <td>${form.dateRaised}</td>
-                        <td><span class="status-badge ${form.status.toLowerCase()}">${form.status}</span></td>
+                    const by = (form.submitted_by||'').split('@')[0];
+                    html += `<tr style="cursor:pointer" onclick="closeDashboardDetail();showFormDetail('${form.id}')" onmouseover="this.style.background='#f0f6ff'" onmouseout="this.style.background=''">
+                        <td><strong>${form.form_number}</strong></td>
+                        <td>${form.date_raised}</td>
+                        <td>${by}</td>
+                        <td><span class="status-badge ${(form.status||'').toLowerCase()}">${form.status}</span></td>
                     </tr>`;
                 });
             }
@@ -2467,12 +2464,40 @@
                     </div>
                     <span class="status-badge ${(form.status||'').toLowerCase()}" style="font-size:12px">${form.status}</span>
                 </div>
-                ${detailsHtml ? `<table style="width:100%;border-collapse:collapse">${detailsHtml}</table>` : '<p style="color:#999;font-size:13px">No field details recorded.</p>'}
+                ${detailsHtml ? `<table style="width:100%;border-collapse:collapse;margin-bottom:20px">${detailsHtml}</table>` : '<p style="color:#999;font-size:13px;margin-bottom:20px">No field details recorded.</p>'}
+                <div style="display:flex;gap:10px;padding-top:14px;border-top:1px solid #eee">
+                    <button class="button button-secondary" onclick="emailFormFromDetail('${form.form_type}','${form.form_number}')" style="font-size:13px">📧 Email Form</button>
+                    <button class="button button-secondary" onclick="printFormDetail()" style="font-size:13px">🖨 Print / PDF</button>
+                    <button class="button" onclick="closeFormDetail()" style="font-size:13px;margin-left:auto">Close</button>
+                </div>
             `;
         }
 
         function closeFormDetail() {
             document.getElementById('formDetailModal').style.display = 'none';
+        }
+
+        function emailFormFromDetail(formType, formNumber) {
+            window.emailFormNumber = formNumber;
+            document.getElementById('emailFormNumber').value = formNumber;
+            document.getElementById('emailSubject').value = `${formNumber} — Chine Brickwork`;
+            document.getElementById('emailMessage').value = '';
+            closeFormDetail();
+            document.getElementById('emailModal').classList.add('open');
+        }
+
+        function printFormDetail() {
+            const content = document.getElementById('formDetailContent').innerHTML;
+            const w = window.open('','','width=800,height=600');
+            w.document.write(`<!DOCTYPE html><html><head><title>Form Detail</title>
+                <style>body{font-family:Arial,sans-serif;padding:30px;font-size:13px}
+                table{width:100%;border-collapse:collapse}
+                td{padding:8px 12px;border-bottom:1px solid #eee;vertical-align:top}
+                .status-badge{padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;background:#e8f5e9;color:#2e7d32}
+                button{display:none}</style>
+                </head><body>${content}</body></html>`);
+            w.document.close();
+            w.print();
         }
 
         // ── Override updateDashboard to load from Supabase ────────────────────────
