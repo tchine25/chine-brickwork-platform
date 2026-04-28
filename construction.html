@@ -2429,6 +2429,25 @@
             container.innerHTML = html;
         }
 
+        // ── Job header (logo + project details from jobs table) ──────────────────
+        async function buildJobHeader(projectCode) {
+            const cbId = projectCode.replace(/^(CB)(\d+)$/i, '$1 $2');
+            const { data: job } = await sb.from('jobs').select('cb,proj,con,address').ilike('id', cbId).single();
+            const logo = `<svg viewBox="0 0 28 28" fill="none" width="44" height="44"><rect x="1" y="1" width="11" height="11" rx="2.5" fill="#1ab8a8"/><rect x="15" y="1" width="11" height="11" rx="2.5" fill="#1ab8a8" opacity="0.45"/><rect x="1" y="15" width="11" height="11" rx="2.5" fill="#1ab8a8" opacity="0.45"/><rect x="15" y="15" width="11" height="11" rx="2.5" fill="#1a6fa8"/></svg>`;
+            const projName = job?.proj || projectCode;
+            const cb = job?.cb || projectCode;
+            const address = (job?.address || '').replace(/,\s*/g, '<br>');
+            return `<div style="display:flex;align-items:flex-start;gap:16px;padding-bottom:18px;margin-bottom:20px;border-bottom:2px solid #eee">
+                ${logo}
+                <div>
+                    <div style="font-size:12px;color:#555;margin-bottom:2px">Chine Brickwork</div>
+                    <div style="font-size:17px;font-weight:700;line-height:1.2">${projName}</div>
+                    <div style="font-size:13px;color:#444;margin-top:2px">${cb}</div>
+                    ${address ? `<div style="font-size:12px;color:#666;margin-top:3px;line-height:1.6">${address}</div>` : ''}
+                </div>
+            </div>`;
+        }
+
         async function showFormDetail(formId) {
             const modal = document.getElementById('formDetailModal');
             const content = document.getElementById('formDetailContent');
@@ -2436,6 +2455,7 @@
             modal.style.display = 'flex';
             const { data: form, error } = await sb.from('construction_forms').select('*').eq('id', formId).single();
             if (error || !form) { content.innerHTML = '<p style="color:#c62828">Could not load form details.</p>'; return; }
+            const jobHeader = await buildJobHeader(form.project);
             const fieldLabels = {
                 date:'Date', 'site-manager':'Site Manager', personnel:'Personnel On Site',
                 weather:'Weather', completed:'Work Completed', planned:'Planned for Tomorrow',
@@ -2457,10 +2477,11 @@
                 });
             }
             content.innerHTML = `
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:14px;border-bottom:2px solid #eee">
+                ${jobHeader}
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
                     <div>
-                        <div style="font-size:18px;font-weight:700">${form.form_number}</div>
-                        <div style="font-size:13px;color:#666;margin-top:3px">${form.project} · ${form.date_raised} · Submitted by ${(form.submitted_by||'').split('@')[0]}</div>
+                        <div style="font-size:16px;font-weight:700">${form.form_number}</div>
+                        <div style="font-size:12px;color:#666;margin-top:3px">Date: ${form.date_raised} · Submitted by ${(form.submitted_by||'').split('@')[0]}</div>
                     </div>
                     <span class="status-badge ${(form.status||'').toLowerCase()}" style="font-size:12px">${form.status}</span>
                 </div>
