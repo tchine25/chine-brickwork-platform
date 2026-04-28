@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chine Brickwork — Platform Development Record</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background:#f5f5f5; color:#1a1a1a; line-height:1.7; font-size:14px; }
+
+  .page { max-width:960px; margin:0 auto; background:white; padding:56px 64px; min-height:100vh; }
+
+  /* Header */
+  .doc-header { border-bottom:3px solid #1a1a1a; padding-bottom:28px; margin-bottom:40px; }
+  .doc-header .logo { font-size:11px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:#888; margin-bottom:10px; }
+  .doc-header h1 { font-size:32px; font-weight:700; line-height:1.2; margin-bottom:10px; }
+  .doc-header .subtitle { font-size:16px; color:#444; margin-bottom:20px; }
+  .doc-meta { display:flex; gap:32px; flex-wrap:wrap; }
+  .doc-meta span { font-size:12px; color:#666; }
+  .doc-meta strong { color:#1a1a1a; }
+
+  /* Sections */
+  h2 { font-size:20px; font-weight:700; margin:48px 0 16px; padding-bottom:8px; border-bottom:2px solid #eee; }
+  h3 { font-size:15px; font-weight:700; margin:28px 0 10px; color:#1a1a1a; }
+  h4 { font-size:13px; font-weight:700; margin:18px 0 6px; color:#333; text-transform:uppercase; letter-spacing:0.5px; }
+  p { margin-bottom:12px; color:#333; }
+
+  /* Lists */
+  ul, ol { margin:0 0 14px 22px; }
+  li { margin-bottom:5px; color:#333; }
+  li strong { color:#1a1a1a; }
+
+  /* Tables */
+  table { width:100%; border-collapse:collapse; margin:16px 0 24px; font-size:13px; }
+  th { background:#f5f5f5; padding:9px 12px; text-align:left; font-weight:700; border:1px solid #ddd; font-size:12px; text-transform:uppercase; letter-spacing:0.4px; color:#555; }
+  td { padding:9px 12px; border:1px solid #ddd; vertical-align:top; }
+  tr:nth-child(even) td { background:#fafafa; }
+
+  /* Badges */
+  .badge { display:inline-block; padding:2px 9px; border-radius:4px; font-size:11px; font-weight:700; }
+  .badge-live    { background:#e8f5e9; color:#2e7d32; }
+  .badge-pending { background:#fff3cd; color:#856404; }
+  .badge-planned { background:#e3f2fd; color:#1565c0; }
+  .badge-admin   { background:#f3e5f5; color:#6a1b9a; }
+
+  /* Code blocks */
+  code { font-family:'Courier New',monospace; background:#f0f0f0; padding:1px 5px; border-radius:3px; font-size:12px; }
+  pre { background:#f5f5f5; border:1px solid #ddd; border-radius:5px; padding:14px 16px; font-size:12px; font-family:'Courier New',monospace; overflow-x:auto; margin:12px 0 18px; line-height:1.6; }
+
+  /* Info boxes */
+  .callout { border-left:4px solid #0066cc; background:#f0f6ff; padding:12px 16px; border-radius:0 5px 5px 0; margin:16px 0; }
+  .callout-warn { border-left-color:#f59e0b; background:#fffbeb; }
+  .callout p { margin:0; font-size:13px; }
+
+  /* Status column */
+  .status-live    { color:#2e7d32; font-weight:700; }
+  .status-pending { color:#856404; font-weight:700; }
+  .status-planned { color:#1565c0; font-weight:700; }
+
+  /* Section dividers */
+  .section-intro { background:#fafafa; border:1px solid #eee; border-radius:6px; padding:16px 20px; margin-bottom:24px; font-size:13px; color:#555; }
+
+  /* Print */
+  @media print {
+    body { background:white; font-size:12px; }
+    .page { padding:20px 28px; max-width:100%; }
+    h2 { margin:32px 0 12px; page-break-after:avoid; }
+    h3 { page-break-after:avoid; }
+    tr { page-break-inside:avoid; }
+    .no-print { display:none; }
+  }
+
+  /* Print button */
+  .print-bar { position:fixed; top:20px; right:20px; background:white; border:1px solid #ddd; border-radius:6px; padding:8px 16px; font-size:13px; font-weight:600; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,0.1); color:#0066cc; }
+  .print-bar:hover { background:#f0f6ff; }
+  @media print { .print-bar { display:none; } }
+
+  /* Roadmap phases */
+  .phase { border:1px solid #eee; border-radius:6px; padding:16px 20px; margin-bottom:14px; }
+  .phase h4 { margin:0 0 8px; font-size:13px; }
+  .phase.done { border-color:#c8e6c9; background:#f9fef9; }
+  .phase.active { border-color:#bbdefb; background:#f0f6ff; }
+  .phase.next { border-color:#ddd; background:#fafafa; }
+  .phase-label { font-size:11px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; margin-right:8px; }
+
+  /* Toc */
+  .toc { background:#fafafa; border:1px solid #eee; border-radius:6px; padding:20px 24px; margin-bottom:40px; }
+  .toc h3 { margin:0 0 12px; font-size:14px; }
+  .toc ol { margin:0 0 0 18px; }
+  .toc li { margin-bottom:4px; }
+  .toc a { color:#0066cc; text-decoration:none; font-size:13px; }
+  .toc a:hover { text-decoration:underline; }
+</style>
+</head>
+<body>
+<button class="print-bar no-print" onclick="window.print()">⬇ Export / Print PDF</button>
+
+<div class="page">
+
+  <!-- HEADER ---------------------------------------------------------------->
+  <div class="doc-header">
+    <div class="logo">Chine Brickwork Ltd</div>
+    <h1>Platform Development Record</h1>
+    <div class="subtitle">Commercial CRM &amp; Construction Management Platform — Product Overview &amp; Technical Documentation</div>
+    <div class="doc-meta">
+      <span><strong>Prepared by:</strong> Tim Chase</span>
+      <span><strong>Date:</strong> April 2026</span>
+      <span><strong>Version:</strong> 1.0</span>
+      <span><strong>Status:</strong> <span class="badge badge-live">Live &amp; In Development</span></span>
+    </div>
+  </div>
+
+  <!-- TABLE OF CONTENTS ----------------------------------------------------->
+  <div class="toc">
+    <h3>Contents</h3>
+    <ol>
+      <li><a href="#s1">Project Overview</a></li>
+      <li><a href="#s2">Platform Architecture</a></li>
+      <li><a href="#s3">Commercial CRM Platform</a></li>
+      <li><a href="#s4">Construction Management Platform</a></li>
+      <li><a href="#s5">Database Schema</a></li>
+      <li><a href="#s6">User Roles &amp; Access Control</a></li>
+      <li><a href="#s7">Dropbox Integration &amp; Sync</a></li>
+      <li><a href="#s8">Hosting &amp; Deployment</a></li>
+      <li><a href="#s9">Development Roadmap</a></li>
+      <li><a href="#s10">Known Limitations &amp; Decisions</a></li>
+    </ol>
+  </div>
+
+  <!-- 1. PROJECT OVERVIEW --------------------------------------------------->
+  <h2 id="s1">1. Project Overview</h2>
+  <div class="section-intro">
+    A bespoke internal web platform built for Chine Brickwork, combining a Commercial CRM for tendering and pipeline management with a Construction Management module for live site operations. Designed to eventually replace the existing Excel tender tracker and improve team visibility across projects.
+  </div>
+
+  <h3>Business Context</h3>
+  <p>Chine Brickwork operates across a pipeline of tendered projects moving through stages from initial enquiry through pricing, submission, and award. Prior to this system, pipeline tracking was managed via a shared Excel spreadsheet and Dropbox folder structure. Key pain points were:</p>
+  <ul>
+    <li>No single view of all live tenders and their current stage</li>
+    <li>Difficulty tracking next actions and follow-up dates</li>
+    <li>No history of communications with contractors/clients</li>
+    <li>Construction site paperwork (RFIs, CVIs, delay notices etc.) handled on paper or in disparate files</li>
+    <li>No multi-user access with role-based permissions</li>
+  </ul>
+
+  <h3>Objectives</h3>
+  <ul>
+    <li>Centralise tender pipeline into a live, searchable CRM dashboard</li>
+    <li>Auto-detect new jobs from Dropbox folder structure via daily sync</li>
+    <li>Provide weekly reporting on job activity for team distribution</li>
+    <li>Build a construction platform for site teams to submit and track forms</li>
+    <li>Role-based access so site managers and project managers see only their projects</li>
+    <li>Cloud-hosted with no on-premise infrastructure required</li>
+  </ul>
+
+  <!-- 2. ARCHITECTURE ------------------------------------------------------>
+  <h2 id="s2">2. Platform Architecture</h2>
+
+  <table>
+    <tr><th>Layer</th><th>Technology</th><th>Purpose</th></tr>
+    <tr><td><strong>Frontend</strong></td><td>Vanilla HTML / CSS / JavaScript (single-page)</td><td>No framework dependency — runs in any browser</td></tr>
+    <tr><td><strong>Database</strong></td><td>Supabase (PostgreSQL)</td><td>Cloud-hosted database with REST API &amp; real-time support</td></tr>
+    <tr><td><strong>Authentication</strong></td><td>Supabase Auth</td><td>Email/password login, session management, JWT tokens</td></tr>
+    <tr><td><strong>Hosting</strong></td><td>Vercel</td><td>Auto-deploys from GitHub on every push</td></tr>
+    <tr><td><strong>Source Control</strong></td><td>GitHub — <code>tchine25/chine-brickwork-platform</code></td><td>Version history, deployment trigger</td></tr>
+    <tr><td><strong>Sync Script</strong></td><td>Node.js (<code>sync-jobs.js</code>)</td><td>Reads Dropbox folders, upserts jobs into Supabase</td></tr>
+    <tr><td><strong>Scheduler</strong></td><td>Windows Task Scheduler</td><td>Runs sync script at 08:00 daily on Tim's PC</td></tr>
+  </table>
+
+  <div class="callout">
+    <p><strong>Key design principle:</strong> The platform is entirely browser-based with no backend server. All data operations go directly from the browser to Supabase via its REST API using the anon public key, secured by Row Level Security (RLS) policies at the database level.</p>
+  </div>
+
+  <!-- 3. COMMERCIAL CRM ---------------------------------------------------->
+  <h2 id="s3">3. Commercial CRM Platform</h2>
+  <p><strong>File:</strong> <code>index.html</code> &nbsp;|&nbsp; <strong>URL:</strong> Production Vercel URL (root path)</p>
+
+  <h3>Overview</h3>
+  <p>The Commercial Platform is the primary daily tool for Tim and the commercial team. It displays the full tender pipeline in a Kanban-style overview, allows job records to be viewed and updated, tracks communications, and generates weekly reports.</p>
+
+  <h3>Feature List</h3>
+
+  <h4>Overview Dashboard</h4>
+  <ul>
+    <li>Kanban-style column layout grouped by pipeline stage</li>
+    <li>Stages: <em>Being Priced, Ready to Review, Returned Take-Off, Returned Bill, Tenders Waiting For, Future Opportunities</em></li>
+    <li>Each job card shows: CB number, contractor, project name, next action date, owner initials</li>
+    <li>Sort toggle — order by <strong>Next Action Date</strong> or <strong>CB Number</strong></li>
+    <li>Live search box with × clear button — filters cards across all columns in real time</li>
+    <li>Future Opportunities merged into the overview so follow-up calls appear alongside active tenders</li>
+  </ul>
+
+  <h4>Job Detail Panel</h4>
+  <ul>
+    <li>Opens as a slide-in panel from the right when a job card is clicked</li>
+    <li>Editable fields: contractor, project, stage, next action, next date, owner, contact details, site address, notes</li>
+    <li>Status flags: OK, On Hold, Won, Lost</li>
+    <li>Auto-saves changes to Supabase on blur / change</li>
+    <li>Draft chase email button — opens the user's default email client (Outlook) pre-filled with contractor name and job details</li>
+  </ul>
+
+  <h4>Communications Timeline</h4>
+  <ul>
+    <li>Per-job log of calls, emails, and notes with date and free-text description</li>
+    <li>Displayed in reverse chronological order (most recent first)</li>
+    <li>Add entry form within the job panel</li>
+    <li>Stored in the <code>comms</code> JSONB column on the jobs table</li>
+  </ul>
+
+  <h4>Weekly Report</h4>
+  <ul>
+    <li>Dedicated tab — <em>Weekly Report</em></li>
+    <li>Week selector dropdown showing current week + previous 4 weeks</li>
+    <li>Two sections: <strong>This Week's Activity</strong> (comms logged in the selected week) and <strong>Job Status Update</strong> (all active jobs by stage)</li>
+    <li>Job status section split by sub-headings: Being Priced, Ready to Review, New Tenders Log, Tenders Waiting For</li>
+    <li>Clickable rows — clicking any job in the report opens the full job detail panel</li>
+    <li>Fixed-width column layout for clean print alignment</li>
+    <li>Print / Export to PDF button</li>
+  </ul>
+
+  <h4>Future Opportunities</h4>
+  <ul>
+    <li>Separate stage bucket for prospects not yet in active tendering</li>
+    <li>Cards shown in Overview dashboard alongside active stages</li>
+    <li>Follow-up date tracked — overdue items highlighted</li>
+  </ul>
+
+  <h4>Navigation</h4>
+  <ul>
+    <li>Module tabs: Overview · Future Opportunities · Weekly Report · Construction Platform (link)</li>
+    <li>Construction Platform tab opens in a new browser tab</li>
+  </ul>
+
+  <!-- 4. CONSTRUCTION PLATFORM --------------------------------------------->
+  <h2 id="s4">4. Construction Management Platform</h2>
+  <p><strong>File:</strong> <code>construction.html</code> &nbsp;|&nbsp; <strong>URL:</strong> Production Vercel URL <code>/construction.html</code></p>
+
+  <h3>Overview</h3>
+  <p>The Construction Platform is a separate, independently authenticated module for live project management. Site teams and project managers can raise and track construction forms (RFIs, CVIs, delay notices, H&amp;S records, etc.) against their assigned projects. Admins have full visibility and user management.</p>
+
+  <h3>Authentication</h3>
+  <ul>
+    <li>Separate login screen — not shared with the Commercial Platform</li>
+    <li>Powered by Supabase Auth (email + password)</li>
+    <li>Only users with a record in <code>cp_profiles</code> can access the platform</li>
+    <li>Tim Chase and Phil Watson have admin-level access</li>
+    <li>All other users must be invited by an admin</li>
+  </ul>
+
+  <h3>Projects</h3>
+  <p>Projects are defined as a static list within the application. Each project has its own isolated set of forms. The project dropdown is filtered based on the logged-in user's assigned projects (for non-admins).</p>
+
+  <h3>Form Types</h3>
+  <table>
+    <tr><th>Category</th><th>Form Type</th><th>Abbreviation</th></tr>
+    <tr><td rowspan="3"><strong>Commercial</strong></td><td>Request for Information (RFI)</td><td>RFI</td></tr>
+    <tr><td>Compensation &amp; Variation Instruction (CVI)</td><td>CVI</td></tr>
+    <tr><td>Delay Notice</td><td>DN</td></tr>
+    <tr><td rowspan="3"><strong>Site Operations</strong></td><td>Daily Diary</td><td>DD</td></tr>
+    <tr><td>Material Request</td><td>MR</td></tr>
+    <tr><td>Scaffold Request</td><td>SR</td></tr>
+    <tr><td rowspan="6"><strong>Health &amp; Safety</strong></td><td>PUWER</td><td>PW</td></tr>
+    <tr><td>HAVS</td><td>HA</td></tr>
+    <tr><td>DABS</td><td>DB</td></tr>
+    <tr><td>Incident Report</td><td>INC</td></tr>
+    <tr><td>Respirator Fit Test</td><td>RF</td></tr>
+    <tr><td>Toolbox Talk</td><td>TBT</td></tr>
+    <tr><td rowspan="3"><strong>Management</strong></td><td>LOLER</td><td>LOLE</td></tr>
+    <tr><td>Site Audit</td><td>SA</td></tr>
+    <tr><td>Progress Report</td><td>PR</td></tr>
+  </table>
+
+  <h3>Form Numbering</h3>
+  <p>Each submitted form is assigned an auto-incremented reference number in the format:</p>
+  <pre>[PROJECT]-[TYPE]-[NNN]
+e.g.  Highbury Court-RFI-001
+      Highbury Court-RFI-002</pre>
+
+  <h3>Register View</h3>
+  <ul>
+    <li>Each form type has a register tab showing all submitted forms for the current project</li>
+    <li>Columns: Form Number, Date, Status, Details (expandable)</li>
+    <li>Status options: Submitted, In Progress, Resolved, Closed</li>
+    <li>Email to client button — opens default email client pre-filled with form details</li>
+    <li>Download PDF button — generates a formatted printable PDF</li>
+  </ul>
+
+  <h3>Dashboard</h3>
+  <ul>
+    <li>Per-project summary showing count of open vs resolved forms by type</li>
+    <li>Red highlighting for any form type with outstanding/open items</li>
+    <li>Refreshes automatically when a form is submitted</li>
+  </ul>
+
+  <h3>Master View</h3>
+  <ul>
+    <li>Admin and manager view showing all projects × all form types in a single grid</li>
+    <li>Each cell shows open count — red if any outstanding items, green tick if all resolved</li>
+    <li>Single-page overview for contract managers to see the full programme at a glance</li>
+  </ul>
+
+  <h3>Admin Panel</h3>
+  <ul>
+    <li>Visible to admin users only (Tim Chase, Phil Watson)</li>
+    <li>Invite New User form: Name, Email, Role, Project Assignments (checkboxes)</li>
+    <li>On invite: profile saved to <code>cp_profiles</code> with assigned projects stored as <code>pending_projects</code></li>
+    <li>On new user's first sign-in: <code>pending_projects</code> automatically converted to <code>cp_project_assignments</code> rows</li>
+    <li>User list shows all users, their role, assigned projects (active users) or pending assignment list (users not yet signed in)</li>
+    <li>Admin can toggle project assignments on/off for active users in real time</li>
+    <li>Admin can change a user's role (Project Manager, Site Manager, Contracts Manager, QS, Foreman etc.)</li>
+  </ul>
+
+  <!-- 5. DATABASE SCHEMA --------------------------------------------------->
+  <h2 id="s5">5. Database Schema</h2>
+  <p>Database hosted on <strong>Supabase</strong> (PostgreSQL). Project ref: <code>tfavnmgmhdpijnbmxexr</code></p>
+
+  <h3>Table: <code>jobs</code> — Commercial CRM</h3>
+  <table>
+    <tr><th>Column</th><th>Type</th><th>Description</th></tr>
+    <tr><td><code>id</code></td><td>text (PK)</td><td>CB number e.g. <code>CB 332</code></td></tr>
+    <tr><td><code>cb</code></td><td>text</td><td>CB number (same as id)</td></tr>
+    <tr><td><code>con</code></td><td>text</td><td>Contractor name</td></tr>
+    <tr><td><code>proj</code></td><td>text</td><td>Project name</td></tr>
+    <tr><td><code>stage</code></td><td>text</td><td>Current pipeline stage</td></tr>
+    <tr><td><code>folder</code></td><td>text</td><td>Dropbox folder source: <code>5a</code> or <code>5b</code></td></tr>
+    <tr><td><code>owner</code></td><td>text</td><td>Owner initials (TC, DML, CV etc.)</td></tr>
+    <tr><td><code>next_date</code></td><td>text</td><td>Next action date (DD/MM/YY)</td></tr>
+    <tr><td><code>next_act</code></td><td>text</td><td>Next action description</td></tr>
+    <tr><td><code>status</code></td><td>text</td><td>ok / on-hold / won / lost</td></tr>
+    <tr><td><code>contact</code></td><td>text</td><td>Contact name, mobile, email (pipe-separated)</td></tr>
+    <tr><td><code>address</code></td><td>text</td><td>Site address</td></tr>
+    <tr><td><code>notes</code></td><td>text</td><td>Free-text notes</td></tr>
+    <tr><td><code>comms</code></td><td>jsonb</td><td>Array of communication log entries <code>[{d, t, note}]</code></td></tr>
+    <tr><td><code>updated_at</code></td><td>timestamptz</td><td>Last modified timestamp</td></tr>
+  </table>
+
+  <h3>Table: <code>construction_forms</code> — Construction Platform</h3>
+  <table>
+    <tr><th>Column</th><th>Type</th><th>Description</th></tr>
+    <tr><td><code>id</code></td><td>uuid (PK)</td><td>Auto-generated</td></tr>
+    <tr><td><code>project</code></td><td>text</td><td>Project name</td></tr>
+    <tr><td><code>form_type</code></td><td>text</td><td>rfi / cvi / delay / diary etc.</td></tr>
+    <tr><td><code>form_number</code></td><td>text</td><td>e.g. <code>Highbury Court-RFI-001</code></td></tr>
+    <tr><td><code>date_raised</code></td><td>text</td><td>Date submitted (DD/MM/YYYY)</td></tr>
+    <tr><td><code>status</code></td><td>text</td><td>Submitted / In Progress / Resolved / Closed</td></tr>
+    <tr><td><code>details</code></td><td>jsonb</td><td>All form field values as key-value pairs</td></tr>
+    <tr><td><code>submitted_by</code></td><td>text</td><td>Email of the user who submitted</td></tr>
+    <tr><td><code>created_at</code></td><td>timestamptz</td><td>Auto-set on insert</td></tr>
+  </table>
+
+  <h3>Table: <code>cp_profiles</code> — Construction Platform Users</h3>
+  <table>
+    <tr><th>Column</th><th>Type</th><th>Description</th></tr>
+    <tr><td><code>id</code></td><td>uuid (PK)</td><td>Matches <code>auth.users.id</code> — null until user first signs in</td></tr>
+    <tr><td><code>email</code></td><td>text</td><td>User email (unique)</td></tr>
+    <tr><td><code>name</code></td><td>text</td><td>Full name</td></tr>
+    <tr><td><code>role</code></td><td>text</td><td><code>admin</code> or <code>manager</code></td></tr>
+    <tr><td><code>job_role</code></td><td>text</td><td>Job title (Project Manager, QS etc.)</td></tr>
+    <tr><td><code>pending_projects</code></td><td>jsonb</td><td>Projects assigned at invite time, before first login</td></tr>
+  </table>
+
+  <h3>Table: <code>cp_project_assignments</code> — Project Access</h3>
+  <table>
+    <tr><th>Column</th><th>Type</th><th>Description</th></tr>
+    <tr><td><code>id</code></td><td>uuid (PK)</td><td>Auto-generated</td></tr>
+    <tr><td><code>user_id</code></td><td>uuid</td><td>References <code>cp_profiles.id</code></td></tr>
+    <tr><td><code>project_id</code></td><td>text</td><td>Project name</td></tr>
+  </table>
+
+  <!-- 6. USER ROLES --------------------------------------------------------->
+  <h2 id="s6">6. User Roles &amp; Access Control</h2>
+
+  <h3>Commercial Platform</h3>
+  <p>The Commercial Platform does not currently have user authentication. It is accessible to anyone with the URL. Access is controlled by keeping the URL private to the Chine Brickwork team.</p>
+  <div class="callout callout-warn">
+    <p><strong>Future consideration:</strong> Adding authentication to the Commercial Platform for staff role management is listed as a planned enhancement.</p>
+  </div>
+
+  <h3>Construction Platform — Role Summary</h3>
+  <table>
+    <tr><th>Role</th><th>Access Level</th><th>Current Users</th></tr>
+    <tr>
+      <td><span class="badge badge-admin">Admin</span></td>
+      <td>Full access: all projects, all forms, Admin panel, Master View, user management</td>
+      <td>Tim Chase, Phil Watson</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-live">Manager</span></td>
+      <td>Access to assigned projects only. Can submit and view forms. No Admin panel.</td>
+      <td>Project managers and site managers (invited by admin)</td>
+    </tr>
+  </table>
+
+  <h3>Row Level Security (RLS)</h3>
+  <p>Supabase RLS policies enforce access at the database level — not just the UI:</p>
+  <ul>
+    <li><code>cp_profiles</code>: users can read their own profile; admins can read all profiles</li>
+    <li><code>cp_project_assignments</code>: users can read their own assignments; admins can read all</li>
+    <li><code>construction_forms</code>: managers can only read/write forms for projects they are assigned to</li>
+    <li><code>jobs</code>: read/write for authenticated users (Commercial Platform is open)</li>
+  </ul>
+
+  <h3>Invite Flow</h3>
+  <ol>
+    <li>Admin opens Admin panel → Invite New User</li>
+    <li>Enters: Full Name, Email, Role (job title), ticks project checkboxes</li>
+    <li>Profile saved to <code>cp_profiles</code> with <code>pending_projects</code> array and status <em>Pending sign-in</em></li>
+    <li>Admin tells the new user to visit the Construction Platform and sign up using their email</li>
+    <li>On first login, the system automatically:
+      <ul>
+        <li>Links their Supabase Auth UUID to the profile record</li>
+        <li>Creates rows in <code>cp_project_assignments</code> from <code>pending_projects</code></li>
+        <li>Clears <code>pending_projects</code></li>
+      </ul>
+    </li>
+    <li>Project dropdown is filtered to their assigned projects only</li>
+  </ol>
+
+  <!-- 7. DROPBOX SYNC ------------------------------------------------------>
+  <h2 id="s7">7. Dropbox Integration &amp; Sync</h2>
+
+  <h3>Overview</h3>
+  <p>A Node.js script (<code>sync-jobs.js</code>) runs on Tim's Windows PC each morning at 08:00 via Windows Task Scheduler. It scans defined Dropbox subfolders, reads folder names to extract job data, and upserts records into the Supabase <code>jobs</code> table.</p>
+
+  <h3>Scanned Folders</h3>
+  <table>
+    <tr><th>Dropbox Path</th><th>CRM Stage Set</th><th>Folder Badge</th></tr>
+    <tr><td><code>5a / 02. Ready to Review</code></td><td>Ready to Review</td><td>5a</td></tr>
+    <tr><td><code>5a / 04. Being Priced</code></td><td>Being Priced</td><td>5a</td></tr>
+    <tr><td><code>5a / 05. New Tenders Log</code></td><td>Tenders Waiting For</td><td>5a</td></tr>
+    <tr><td><code>5a / 07. Tenders Waiting For</code></td><td>Tenders Waiting For</td><td>5a</td></tr>
+    <tr><td><code>5b / 02. HIT LIST</code></td><td>Being Priced</td><td>5b</td></tr>
+    <tr><td><code>5b / 03. Returned Take-Offs</code></td><td>Returned Take Off</td><td>5b</td></tr>
+    <tr><td><code>5b / 04. Returned Bills &amp; Tender Tenders</code></td><td>Returned Bill</td><td>5b</td></tr>
+    <tr><td><code>5b / 05. Addendum Pricing</code></td><td>Being Priced</td><td>5b</td></tr>
+    <tr><td><code>5b / 06. Addendum Ready</code></td><td>Ready to Review</td><td>5b</td></tr>
+  </table>
+  <p><em>Excluded from sync: 01. Declined, 03. Archive (both in 5a)</em></p>
+
+  <h3>Folder Naming Convention</h3>
+  <p>Folders must follow this pattern for the sync script to parse them:</p>
+  <pre>CB [number] [Contractor] - [Project Name] ([DD-MM-YY])([OWNER])
+e.g.  CB 332 Willmott Dixon - Highbury Court (25-03-26)(TC)</pre>
+
+  <h3>Sync Logic</h3>
+  <ol>
+    <li>Read all existing jobs from Supabase (indexed by normalised CB number)</li>
+    <li>Scan each Dropbox folder in priority order</li>
+    <li>Parse folder name → extract CB, contractor, project, owner, tender date</li>
+    <li>Look inside folder for a Job Sheet Excel file — read contact name, mobile, email, site address</li>
+    <li>If job not in database → <strong>insert</strong> new record</li>
+    <li>If job already exists → <strong>update</strong> stage and folder badge; add contact if DB record has none</li>
+    <li>First folder match wins — a job appearing in multiple folders only gets the highest-priority stage</li>
+  </ol>
+
+  <h3>Sync Schedule</h3>
+  <ul>
+    <li>Runs daily at <strong>08:00</strong> via Windows Task Scheduler on Tim's PC</li>
+    <li>Requires Tim's PC to be on and connected to Dropbox at 08:00</li>
+    <li>Can be run manually at any time: <code>node sync-jobs.js</code> in the project folder</li>
+  </ul>
+
+  <!-- 8. HOSTING ---------------------------------------------------------->
+  <h2 id="s8">8. Hosting &amp; Deployment</h2>
+
+  <table>
+    <tr><th>Service</th><th>Provider</th><th>Details</th></tr>
+    <tr><td>Frontend Hosting</td><td>Vercel</td><td>Auto-deploys from GitHub <code>main</code> branch on every push. Free tier.</td></tr>
+    <tr><td>Database</td><td>Supabase</td><td>Managed PostgreSQL. Free tier (500MB). Project ref: <code>tfavnmgmhdpijnbmxexr</code></td></tr>
+    <tr><td>Source Code</td><td>GitHub</td><td>Repo: <code>tchine25/chine-brickwork-platform</code> (private)</td></tr>
+    <tr><td>Sync Script</td><td>Tim's PC (local)</td><td>Node.js script, runs via Windows Task Scheduler</td></tr>
+  </table>
+
+  <h3>Deployment Process</h3>
+  <ol>
+    <li>Code changes made locally to <code>index.html</code> or <code>construction.html</code></li>
+    <li><code>git push</code> to GitHub <code>main</code> branch</li>
+    <li>Vercel detects the push and automatically rebuilds and deploys within ~60 seconds</li>
+    <li>No build step required — static HTML files served directly</li>
+  </ol>
+
+  <!-- 9. ROADMAP ---------------------------------------------------------->
+  <h2 id="s9">9. Development Roadmap</h2>
+
+  <div class="phase done">
+    <h4><span class="phase-label" style="color:#2e7d32">✓ Complete</span> Phase 1 — Commercial CRM Core</h4>
+    <ul>
+      <li>Job cards with Kanban overview, job detail panel, communications log</li>
+      <li>Dropbox sync script with daily scheduler</li>
+      <li>Sort toggle (date / CB number), search with clear button</li>
+      <li>Future Opportunities merged into overview</li>
+      <li>Draft chase email → opens Outlook</li>
+      <li>Weekly Report tab with week selector, print/export</li>
+      <li>Comms timeline sorted most recent first</li>
+    </ul>
+  </div>
+
+  <div class="phase done">
+    <h4><span class="phase-label" style="color:#2e7d32">✓ Complete</span> Phase 2 — Construction Platform Core</h4>
+    <ul>
+      <li>Full 15-form-type construction management system</li>
+      <li>Supabase backend — all forms saved to cloud database</li>
+      <li>Authentication (email/password login)</li>
+      <li>Master View grid across all projects and form types</li>
+    </ul>
+  </div>
+
+  <div class="phase done">
+    <h4><span class="phase-label" style="color:#2e7d32">✓ Complete</span> Phase 3 — Multi-User Role-Based Access</h4>
+    <ul>
+      <li>Admin / Manager roles</li>
+      <li>Project assignment per user</li>
+      <li>Admin panel with user list and project toggles</li>
+      <li>Invite flow with project checkboxes — pending profile converted on first login</li>
+      <li>Row Level Security policies in Supabase</li>
+    </ul>
+  </div>
+
+  <div class="phase active">
+    <h4><span class="phase-label" style="color:#1565c0">→ In Progress</span> Phase 4 — Project Detail Sheets</h4>
+    <ul>
+      <li>Per-project details page: contractor, site address, contract value, start date, programme, site manager</li>
+      <li>Editable by admin, read-only for managers</li>
+      <li>Linked from the project dropdown / dashboard</li>
+    </ul>
+  </div>
+
+  <div class="phase next">
+    <h4><span class="phase-label" style="color:#666">Planned</span> Phase 5 — Commercial Platform Authentication</h4>
+    <ul>
+      <li>Login screen for commercial CRM</li>
+      <li>User profiles for Tim, DML, CV, RL — restrict editing to own jobs or admin level</li>
+      <li>Profile dropdown in header (Tim's requested feature)</li>
+    </ul>
+  </div>
+
+  <div class="phase next">
+    <h4><span class="phase-label" style="color:#666">Planned</span> Phase 6 — Notifications &amp; Alerts</h4>
+    <ul>
+      <li>Email digest for jobs with overdue next action dates</li>
+      <li>Weekly report auto-distribution to the team</li>
+      <li>New form submission notifications for admin</li>
+    </ul>
+  </div>
+
+  <div class="phase next">
+    <h4><span class="phase-label" style="color:#666">Planned</span> Phase 7 — Mobile Optimisation</h4>
+    <ul>
+      <li>Responsive layout for site managers accessing Construction Platform on phones/tablets</li>
+      <li>Touch-friendly form controls</li>
+    </ul>
+  </div>
+
+  <!-- 10. KNOWN LIMITATIONS ------------------------------------------------>
+  <h2 id="s10">10. Known Limitations &amp; Design Decisions</h2>
+
+  <table>
+    <tr><th>Item</th><th>Current Behaviour</th><th>Rationale / Resolution</th></tr>
+    <tr>
+      <td>Sync requires Tim's PC</td>
+      <td>sync-jobs.js runs on Tim's Windows PC via Task Scheduler — if the PC is off, no sync that day</td>
+      <td>Acceptable for now. Long-term: migrate to a cloud-scheduled function (e.g. Supabase Edge Function or GitHub Actions)</td>
+    </tr>
+    <tr>
+      <td>Projects defined statically</td>
+      <td>Project list in construction.html is hardcoded. Adding a new project requires a code change and redeploy.</td>
+      <td>Projects change infrequently. Future: move to a <code>projects</code> table in Supabase and load dynamically</td>
+    </tr>
+    <tr>
+      <td>Commercial Platform — no auth</td>
+      <td>Anyone with the Vercel URL can access the commercial CRM</td>
+      <td>URL kept private. Auth planned for Phase 5.</td>
+    </tr>
+    <tr>
+      <td>Invite flow requires manual Supabase sign-up</td>
+      <td>Invited users must create their own Supabase Auth account before they can log in</td>
+      <td>Supabase admin invite API requires a service-role key which cannot be exposed client-side. Solution: admin sends invite email manually; user signs up at platform URL</td>
+    </tr>
+    <tr>
+      <td>Comms stored as JSONB</td>
+      <td>Communications log is stored as an array inside the jobs record, not a separate table</td>
+      <td>Simpler to implement for a single-user app. Potential future issue with concurrent edits — migrate to a <code>comms</code> table if concurrent use becomes common</td>
+    </tr>
+    <tr>
+      <td>Excel date parsing</td>
+      <td>Dates in job sheet Excel files are Excel serial numbers and must be converted</td>
+      <td>Handled in sync script via <code>excelDateToString()</code></td>
+    </tr>
+  </table>
+
+  <!-- FOOTER ------------------------------------------------------------->
+  <div style="margin-top:56px;padding-top:20px;border-top:1px solid #eee;font-size:12px;color:#999;display:flex;justify-content:space-between;">
+    <span>Chine Brickwork Ltd — Internal Platform</span>
+    <span>Document prepared April 2026 · Version 1.0</span>
+  </div>
+
+</div>
+</body>
+</html>
