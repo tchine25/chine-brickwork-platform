@@ -343,9 +343,13 @@
   </div>
 
   <div id="c-actions" class="pg">
-    <div class="fullcard"><table class="tbl"><thead><tr>
-      <th style="width:75px">CB No.</th><th style="width:130px">Contractor</th><th>Project</th>
-      <th style="width:42px">Who</th><th style="width:100px">Next action date</th><th>Next action</th>
+    <div class="fullcard"><table class="tbl"><thead><tr id="act-hdr">
+      <th style="width:75px;cursor:pointer;user-select:none" onclick="sortActions('cb')" title="Sort by CB No.">CB No. <span id="sort-cb" style="color:#1a6fa8;font-size:11px">↕</span></th>
+      <th style="width:130px;cursor:pointer;user-select:none" onclick="sortActions('con')" title="Sort by Contractor">Contractor <span id="sort-con" style="color:#1a6fa8;font-size:11px">↕</span></th>
+      <th style="cursor:pointer;user-select:none" onclick="sortActions('proj')" title="Sort by Project">Project <span id="sort-proj" style="color:#1a6fa8;font-size:11px">↕</span></th>
+      <th style="width:42px;cursor:pointer;user-select:none" onclick="sortActions('owner')" title="Sort by Who">Who <span id="sort-owner" style="color:#1a6fa8;font-size:11px">↕</span></th>
+      <th style="width:100px;cursor:pointer;user-select:none" onclick="sortActions('date')" title="Sort by date">Next action date <span id="sort-date" style="color:#1a6fa8;font-size:11px">↑</span></th>
+      <th>Next action</th>
     </tr></thead><tbody id="act-body"></tbody></table></div>
   </div>
 
@@ -1369,9 +1373,26 @@ function filterPipe(){
   renderPipeline(jobs.filter(j=>(!s||(j.con+j.proj).toLowerCase().includes(s))&&(!st||j.stage===st)&&(!ow||j.owner===ow)));
 }
 
+let actSortCol='date', actSortDir=1;
+function sortActions(col){
+  if(actSortCol===col) actSortDir*=-1; else { actSortCol=col; actSortDir=1; }
+  ['cb','con','proj','owner','date'].forEach(c=>{ const el=document.getElementById('sort-'+c); if(el){ el.textContent='↕'; el.style.color='#1a6fa8'; } });
+  const el=document.getElementById('sort-'+col);
+  if(el){ el.textContent=actSortDir===1?'↑':'↓'; el.style.color='#e65100'; }
+  renderActions();
+}
 function renderActions(){
-  const d=[...jobs].sort((a,b)=>({overdue:0,week:1,ok:2}[a.status]-{overdue:0,week:1,ok:2}[b.status]));
-  document.getElementById('act-body').innerHTML=d.map(j=>`<tr onclick="openJob('${j.id}')">
+  const cbNum=j=>parseInt((j.cb||'').replace(/\D/g,''))||0;
+  const dateVal=d=>{if(!d)return 9999999;const p=d.split('/');if(p.length<3)return 9999999;const y=p[2].length===2?2000+parseInt(p[2]):parseInt(p[2]);return y*10000+parseInt(p[1])*100+parseInt(p[0]);};
+  const sorters={
+    cb:(a,b)=>actSortDir*(cbNum(a)-cbNum(b)),
+    con:(a,b)=>actSortDir*(a.con||'').localeCompare(b.con||''),
+    proj:(a,b)=>actSortDir*(a.proj||'').localeCompare(b.proj||''),
+    owner:(a,b)=>actSortDir*(a.owner||'').localeCompare(b.owner||''),
+    date:(a,b)=>actSortDir*(dateVal(a.nextDate)-dateVal(b.nextDate)),
+  };
+  const d=[...jobs].sort(sorters[actSortCol]||sorters.date);
+  document.getElementById('act-body').innerHTML=d.map(j=>`<tr onclick="openJob('${j.id}')" style="cursor:pointer" onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background=''">
     <td style="font-weight:600">${j.cb}</td><td>${j.con}</td><td>${j.proj}</td>
     <td style="text-align:center">${obadge(j.owner)}</td>
     <td style="color:${j.status==='overdue'?'var(--danger-txt)':j.status==='week'?'var(--warn-txt)':'var(--text-secondary)'};font-weight:${j.status==='overdue'?'600':'400'}">${j.nextDate}</td>
