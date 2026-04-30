@@ -383,7 +383,7 @@
     </div>
     <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
       <input id="fs" placeholder="Search contractor or project..." oninput="filterFuture()" style="flex:1;min-width:160px;font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--bg-secondary);color:var(--text-primary)">
-      <select id="ft" onchange="filterFuture()" style="font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--bg-secondary);color:var(--text-primary)"><option value="">All timings</option><option>Imminent</option><option>Mid 2026</option><option>Late 2026</option><option>TBC</option></select>
+      <select id="ft" onchange="filterFuture()" style="font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--bg-secondary);color:var(--text-primary)"><option value="">All timings</option><option>Imminent</option><option>Mid 2026</option><option>Late 2026</option><option>Early 2027</option><option>Mid 2027</option><option>Late 2027</option><option>Early 2028</option><option>Mid 2028</option><option>Late 2028</option><option>2029</option><option>2030</option><option>TBC</option></select>
       <button class="btn btn-primary" onclick="openNewOpp()">+ Add opportunity</button>
     </div>
     <div class="fut-grid" id="fut-grid"></div>
@@ -687,7 +687,7 @@
       <div class="form-row"><label>Project name</label><input type="text" id="no-proj" placeholder="e.g. King Street Phase 2"></div>
       <div class="form-grid">
         <div class="form-row"><label>Timing</label>
-          <select id="no-timing"><option>Imminent</option><option>Mid 2026</option><option selected>Late 2026</option><option>TBC</option></select>
+          <select id="no-timing"><option>Imminent</option><option>Mid 2026</option><option>Late 2026</option><option>Early 2027</option><option>Mid 2027</option><option selected>Late 2027</option><option>Early 2028</option><option>Mid 2028</option><option>Late 2028</option><option>2029</option><option>2030</option><option>TBC</option></select>
         </div>
         <div class="form-row"><label>Owner</label>
           <select id="no-owner"><option>TC</option><option>SO</option><option>JS</option><option>RL</option><option>DML</option></select>
@@ -1182,8 +1182,8 @@ const SC={overdue:['pr','Overdue'],week:['pb','Due soon'],ok:['pp','On track']};
 const TC2={call:'#378add',email:'#1D9E75',note:'#888780'};
 const TLbl={call:'Call',email:'Email',note:'Note'};
 const pillCss={ps:'background:var(--info-bg);color:var(--info-txt)',pb:'background:var(--warn-bg);color:var(--warn-txt)',pp:'background:var(--bg-secondary);color:var(--text-secondary)',pg2:'background:var(--success-bg);color:var(--success-txt)',pr:'background:var(--danger-bg);color:var(--danger-txt)'};
-const tColor={'Imminent':'#1D9E75','Mid 2026':'#BA7517','Late 2026':'#534AB7','TBC':'#888780'};
-const tBg={'Imminent':'#E1F5EE','Mid 2026':'#FAEEDA','Late 2026':'#EEEDFE','TBC':'#F1EFE8'};
+const tColor={'Imminent':'#1D9E75','Mid 2026':'#BA7517','Late 2026':'#534AB7','Early 2027':'#1a6fa8','Mid 2027':'#1a6fa8','Late 2027':'#1a6fa8','Early 2028':'#7b3f9e','Mid 2028':'#7b3f9e','Late 2028':'#7b3f9e','2029':'#c0392b','2030':'#c0392b','TBC':'#888780'};
+const tBg={'Imminent':'#E1F5EE','Mid 2026':'#FAEEDA','Late 2026':'#EEEDFE','Early 2027':'#e8f0fe','Mid 2027':'#e8f0fe','Late 2027':'#e8f0fe','Early 2028':'#f3e8fe','Mid 2028':'#f3e8fe','Late 2028':'#f3e8fe','2029':'#fde8e8','2030':'#fde8e8','TBC':'#F1EFE8'};
 function pill(cls,txt){return`<span class="pill" style="${pillCss[cls]||''}">${txt}</span>`;}
 function obadge(o){return`<span style="width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;background:${OC[o]||'#f5f5f5'};color:${OT[o]||'#333'}">${o}</span>`;}
 
