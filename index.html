@@ -343,6 +343,15 @@
   </div>
 
   <div id="c-actions" class="pg">
+    <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+      <select id="act-con-filter" onchange="renderActions()" style="font-size:12px;padding:5px 10px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--bg-primary);color:var(--text-primary);cursor:pointer;min-width:180px">
+        <option value="">All contractors</option>
+      </select>
+      <select id="act-owner-filter" onchange="renderActions()" style="font-size:12px;padding:5px 10px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--bg-primary);color:var(--text-primary);cursor:pointer">
+        <option value="">All owners</option>
+        <option>TC</option><option>SO</option><option>JS</option><option>RL</option><option>DML</option><option>CV</option>
+      </select>
+    </div>
     <div class="fullcard"><table class="tbl"><thead><tr id="act-hdr">
       <th style="width:75px;cursor:pointer;user-select:none" onclick="sortActions('cb')" title="Sort by CB No.">CB No. <span id="sort-cb" style="color:#1a6fa8;font-size:11px">↕</span></th>
       <th style="width:130px;cursor:pointer;user-select:none" onclick="sortActions('con')" title="Sort by Contractor">Contractor <span id="sort-con" style="color:#1a6fa8;font-size:11px">↕</span></th>
@@ -1383,6 +1392,17 @@ function sortActions(col){
   renderActions();
 }
 function renderActions(){
+  // Populate contractor dropdown from live jobs (preserve current selection)
+  const conSel=document.getElementById('act-con-filter');
+  const ownerSel=document.getElementById('act-owner-filter');
+  if(conSel){
+    const current=conSel.value;
+    const cons=[...new Set(jobs.map(j=>j.con).filter(Boolean))].sort();
+    conSel.innerHTML='<option value="">All contractors</option>'+cons.map(c=>`<option${c===current?' selected':''}>${c}</option>`).join('');
+  }
+  const filterCon=conSel?conSel.value:'';
+  const filterOwner=ownerSel?ownerSel.value:'';
+
   const cbNum=j=>parseInt((j.cb||'').replace(/\D/g,''))||0;
   const dateVal=d=>{if(!d)return 9999999;const p=d.split('/');if(p.length<3)return 9999999;const y=p[2].length===2?2000+parseInt(p[2]):parseInt(p[2]);return y*10000+parseInt(p[1])*100+parseInt(p[0]);};
   const sorters={
@@ -1392,7 +1412,9 @@ function renderActions(){
     owner:(a,b)=>actSortDir*(a.owner||'').localeCompare(b.owner||''),
     date:(a,b)=>actSortDir*(dateVal(a.nextDate)-dateVal(b.nextDate)),
   };
-  const d=[...jobs].sort(sorters[actSortCol]||sorters.date);
+  const d=[...jobs]
+    .filter(j=>(!filterCon||j.con===filterCon)&&(!filterOwner||j.owner===filterOwner))
+    .sort(sorters[actSortCol]||sorters.date);
   document.getElementById('act-body').innerHTML=d.map(j=>`<tr onclick="openJob('${j.id}')" style="cursor:pointer" onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background=''">
     <td style="font-weight:600">${j.cb}</td><td>${j.con}</td><td>${j.proj}</td>
     <td style="text-align:center">${obadge(j.owner)}</td>
