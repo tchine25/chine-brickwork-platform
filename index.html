@@ -1183,7 +1183,7 @@ function renderOverview(){
   const folderTag=f=>f?`<span style="font-size:10px;background:#e8f0fe;color:#1a56db;border-radius:3px;padding:1px 5px;font-weight:500;white-space:nowrap">${f}</span>`:'';
   const mkLi=j=>`<li class="ji-ov" onclick="openJob('${j.id}')">
     <div class="dot ${dc[j.status]}" style="margin-top:1px"></div>
-    <div><div class="jname" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${j.cb} – ${j.proj}</div><div class="jdesc" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${j.nextAct||''}</div></div>
+    <div><div class="jname" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${j.cb} – ${j.proj}</div><div class="jdesc" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${j.owner?`<span style="font-size:10px;font-weight:700;color:#1a6fa8;margin-right:5px;background:#e8f0fe;padding:1px 5px;border-radius:3px">${j.owner}</span>`:''} ${j.nextAct||''}</div></div>
     <div style="font-size:11px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">· ${j.con}</div>
     <div>${j.stage?`<span style="font-size:10px;background:#e8f0fe;color:#1a56db;border-radius:3px;padding:1px 5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;max-width:90px">${j.stage}</span>`:''}</div>
     <div class="jdate ${dtc[j.status]}" style="text-align:right">${j.nextDate?j.nextDate.slice(0,5):''}</div>
