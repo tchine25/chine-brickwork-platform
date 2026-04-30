@@ -681,7 +681,7 @@
     </div>
     <div class="modal-body">
       <div class="form-row"><label>Contractor</label>
-        <input type="text" id="no-con" placeholder="e.g. Galliford Try" list="no-con-list" autocomplete="off" oninput="updateOppContactDropdown()">
+        <input type="text" id="no-con" placeholder="e.g. Galliford Try" list="no-con-list" autocomplete="off">
         <datalist id="no-con-list"></datalist>
       </div>
       <div class="form-row"><label>Project name</label><input type="text" id="no-proj" placeholder="e.g. King Street Phase 2"></div>
@@ -694,7 +694,7 @@
         </div>
       </div>
       <div class="form-row"><label>Contact</label>
-        <select id="no-contact" style="width:100%"><option value="">— type contractor name first —</option></select>
+        <input type="text" id="no-contact" placeholder="e.g. John Smith · Commercial Manager · 07700 900000" style="width:100%">
       </div>
       <div class="form-row"><label>Detail</label><input type="text" id="no-detail" placeholder="e.g. Awaiting tender, Future pipeline"></div>
       <div class="form-grid">
@@ -1089,7 +1089,7 @@ function openNewOpp(){
   document.getElementById('no-action').value='Monitor';
   document.getElementById('no-date').value='';
   document.getElementById('no-err').textContent='';
-  document.getElementById('no-contact').innerHTML='<option value="">— type contractor name first —</option>';
+  document.getElementById('no-contact').value='';
   document.getElementById('new-opp-overlay').classList.add('on');
 }
 async function updateOppContactDropdown(){
@@ -1447,11 +1447,12 @@ function renderFuture(data){
       const s=p.nextDate?calcStatus(p.nextDate):'ok';
       const dotColor=p.nextDate?(s==='overdue'?'#e24b4a':s==='week'?'#ef9f27':'#1d9e75'):'#7F77DD';
       const dateClass=s==='overdue'?'r':s==='week'?'a':'b';
-      rows.push(`<li class="ji" data-ci="${ci}" data-pi="${pi}">
+      rows.push(`<li class="ji" data-ci="${ci}" data-pi="${pi}" title="Click to add notes & contacts">
         <div class="dot" style="background:${dotColor};margin-top:5px;flex-shrink:0"></div>
-        <div style="flex:1">
-          <div class="jname">${p.name} <span style="font-weight:400;color:var(--text-secondary)">· ${c.contractor}</span><span style="font-size:10px;background:${tBg[c.timing]||'#f5f5f5'};color:${tColor[c.timing]||'#555'};border-radius:3px;padding:1px 5px;margin-left:6px;font-weight:500">${c.timing}</span></div>
+        <div style="flex:1;min-width:0">
+          <div class="jname">${p.name} <span style="font-weight:400;color:var(--text-secondary)">· ${c.contractor}</span><span style="font-size:10px;background:${tBg[p.timing||c.timing]||'#f5f5f5'};color:${tColor[p.timing||c.timing]||'#555'};border-radius:3px;padding:1px 5px;margin-left:6px;font-weight:500">${p.timing||c.timing}</span>${p.owner?`<span style="font-size:10px;font-weight:700;color:${OT[p.owner]||'#333'};background:${OC[p.owner]||'#eee'};border-radius:3px;padding:1px 5px;margin-left:4px">${p.owner}</span>`:''}</div>
           <div class="jdesc">${p.action||p.detail||''}</div>
+          ${p.contact?`<div style="font-size:11px;color:var(--text-secondary);margin-top:2px">👤 ${p.contact}</div>`:''}
         </div>
         ${p.nextDate?`<div class="jdate ${dateClass}">${p.nextDate.slice(0,5)}</div>`:''}
       </li>`);
